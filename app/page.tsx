@@ -175,7 +175,7 @@ export default async function Home({
                 tech: project.tech_stack ? project.tech_stack.split(',').map((t) => t.trim()) : [],
               }}
               isWishlisted={false}
-              onToggleWishlist={() => {}}
+             
             />
           ))}
         </div>
