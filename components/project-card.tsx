@@ -1,10 +1,12 @@
 'use client'
 
+import { useState } from 'react'
 import { Heart, Star, Download, Eye } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import Image from 'next/image'
+import Link from 'next/link'
+import { toast } from 'sonner'
 
 interface Project {
   id: number
@@ -20,11 +22,52 @@ interface Project {
 
 interface ProjectCardProps {
   project: Project
-  isWishlisted: boolean
-  onToggleWishlist: () => void
+  initialIsWishlisted?: boolean
+  isLoggedIn?: boolean
 }
 
-export default function ProjectCard({ project, isWishlisted, onToggleWishlist }: ProjectCardProps) {
+export default function ProjectCard({
+  project,
+  initialIsWishlisted = false,
+  isLoggedIn = false,
+}: ProjectCardProps) {
+  const [isWishlisted, setIsWishlisted] = useState(initialIsWishlisted)
+  const [wishlistLoading, setWishlistLoading] = useState(false)
+
+  async function handleToggleWishlist() {
+    if (!isLoggedIn) {
+      toast.error('Sign in to save projects to your wishlist.')
+      return
+    }
+
+    // Optimistic update
+    setIsWishlisted((prev) => !prev)
+    setWishlistLoading(true)
+
+    try {
+      const res = await fetch('/api/wishlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId: project.id }),
+      })
+
+      const json = await res.json()
+
+      if (!res.ok) {
+        // Revert on error
+        setIsWishlisted((prev) => !prev)
+        toast.error(json.error ?? 'Failed to update wishlist.')
+      } else {
+        toast.success(json.wishlisted ? 'Added to wishlist' : 'Removed from wishlist')
+      }
+    } catch {
+      setIsWishlisted((prev) => !prev)
+      toast.error('Something went wrong. Please try again.')
+    } finally {
+      setWishlistLoading(false)
+    }
+  }
+
   return (
     <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 border border-border h-full flex flex-col">
       {/* Image Section */}
@@ -34,21 +77,25 @@ export default function ProjectCard({ project, isWishlisted, onToggleWishlist }:
           alt={project.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
-        {/* Overlay */}
+        {/* Hover overlay */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-          <Button
-            size="sm"
-            className="opacity-0 group-hover:opacity-100 transition-opacity gap-2"
-          >
-            <Eye className="h-4 w-4" />
-            Preview
-          </Button>
+          <Link href={`/projects/${project.id}`}>
+            <Button
+              size="sm"
+              className="opacity-0 group-hover:opacity-100 transition-opacity gap-2"
+            >
+              <Eye className="h-4 w-4" />
+              Preview
+            </Button>
+          </Link>
         </div>
-        
+
         {/* Wishlist Button */}
         <button
-          onClick={onToggleWishlist}
-          className="absolute top-3 right-3 bg-background/80 backdrop-blur p-2 rounded-lg hover:bg-background transition-all"
+          onClick={handleToggleWishlist}
+          disabled={wishlistLoading}
+          aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+          className="absolute top-3 right-3 bg-background/80 backdrop-blur p-2 rounded-lg hover:bg-background transition-all disabled:opacity-50"
         >
           <Heart
             className={`h-5 w-5 transition-colors ${
@@ -70,9 +117,11 @@ export default function ProjectCard({ project, isWishlisted, onToggleWishlist }:
       {/* Content Section */}
       <div className="p-4 flex-1 flex flex-col">
         {/* Title */}
-        <h3 className="font-bold text-lg text-foreground mb-1 line-clamp-2 hover:text-accent transition-colors cursor-pointer">
-          {project.title}
-        </h3>
+        <Link href={`/projects/${project.id}`}>
+          <h3 className="font-bold text-lg text-foreground mb-1 line-clamp-2 hover:text-accent transition-colors cursor-pointer">
+            {project.title}
+          </h3>
+        </Link>
 
         {/* Author */}
         <p className="text-sm text-muted-foreground mb-3">by {project.author}</p>
@@ -88,7 +137,7 @@ export default function ProjectCard({ project, isWishlisted, onToggleWishlist }:
 
         {/* Tech Stack */}
         <div className="flex gap-1 flex-wrap mb-4">
-          {project.tech.slice(0, 2).map(tech => (
+          {project.tech.slice(0, 2).map((tech) => (
             <Badge key={tech} variant="outline" className="text-xs">
               {tech}
             </Badge>
@@ -106,12 +155,15 @@ export default function ProjectCard({ project, isWishlisted, onToggleWishlist }:
             <span className="text-2xl font-bold text-foreground">${project.price}</span>
             <span className="text-xs text-muted-foreground">one-time</span>
           </div>
-          <Button size="sm" className="gap-2">
-            <Download className="h-4 w-4" />
-            Buy Now
-          </Button>
+          <Link href={`/projects/${project.id}`}>
+            <Button size="sm" className="gap-2">
+              <Download className="h-4 w-4" />
+              Buy Now
+            </Button>
+          </Link>
         </div>
       </div>
     </Card>
   )
 }
+

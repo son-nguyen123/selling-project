@@ -22,8 +22,7 @@ export async function GET(request: NextRequest) {
         author_id,
         cover_image_url,
         created_at,
-        updated_at,
-        users!author_id(name)
+        profiles!author_id(name, avatar_url)
       `)
       .limit(50)
 
