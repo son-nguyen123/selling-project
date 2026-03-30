@@ -6,6 +6,7 @@ import Header from '@/components/header'
 import Hero from '@/components/hero'
 import ProjectCard from '@/components/project-card'
 import Footer from '@/components/footer'
+import SortDropdown from '@/components/sort-dropdown'
 import { createClient } from '@/lib/supabase/server'
 
 interface Project {
@@ -141,21 +142,7 @@ export default async function Home({
             Featured Projects{' '}
             <span className="text-muted-foreground font-normal text-lg">({projectsWithAuthors.length})</span>
           </h2>
-          <form action="/" method="get" className="inline">
-            <input type="hidden" name="search" value={search} />
-            <input type="hidden" name="category" value={category} />
-            <select
-              name="sort"
-              defaultValue={sort}
-              onChange={(e) => e.target.form?.submit()}
-              className="bg-card text-foreground border border-border rounded-lg px-4 py-2"
-            >
-              <option value="featured">Featured</option>
-              <option value="latest">Latest</option>
-              <option value="price-low">Price: Low to High</option>
-              <option value="price-high">Price: High to Low</option>
-            </select>
-          </form>
+          <SortDropdown sort={sort} search={search} category={category} />
         </div>
 
         {/* Projects Grid */}
