@@ -20,6 +20,13 @@ export default function SearchBar({ defaultValue = '' }: SearchBarProps) {
     setValue(searchParams.get('search') ?? '')
   }, [searchParams])
 
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [])
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const v = e.target.value
     setValue(v)
