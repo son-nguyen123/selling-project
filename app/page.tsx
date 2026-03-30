@@ -32,54 +32,62 @@ export default async function Home({
 }) {
   const { search = '', category = 'All', sort = 'featured' } = await searchParams
 
-  const supabase = await createClient()
-
   // Fetch projects with author information
-  let query = supabase
-    .from('projects')
-    .select(`
-      id,
-      title,
-      description,
-      tech_stack,
-      category,
-      price,
-      author_id,
-      cover_image_url,
-      created_at,
-      updated_at,
-      users!author_id(name)
-    `)
-    .limit(50)
+  let projectsWithAuthors: ProjectWithAuthor[] = []
 
-  if (category !== 'All') {
-    query = query.eq('category', category)
+  try {
+    const supabase = await createClient()
+
+    let query = supabase
+      .from('projects')
+      .select(`
+        id,
+        title,
+        description,
+        tech_stack,
+        category,
+        price,
+        author_id,
+        cover_image_url,
+        created_at,
+        updated_at,
+        users!author_id(name)
+      `)
+      .limit(50)
+
+    if (category !== 'All') {
+      query = query.eq('category', category)
+    }
+
+    if (search) {
+      query = query.or(
+        `title.ilike.%${search}%,description.ilike.%${search}%,tech_stack.ilike.%${search}%`
+      )
+    }
+
+    // Apply sorting
+    if (sort === 'latest') {
+      query = query.order('created_at', { ascending: false })
+    } else if (sort === 'price-low') {
+      query = query.order('price', { ascending: true })
+    } else if (sort === 'price-high') {
+      query = query.order('price', { ascending: false })
+    } else {
+      query = query.order('created_at', { ascending: false })
+    }
+
+    const { data: projects = [], error } = await query
+
+    if (!error) {
+      // Transform data to include author names
+      projectsWithAuthors = (projects as any[]).map((project) => ({
+        ...project,
+        author_name: project.users?.name || 'Unknown Author',
+      }))
+    }
+  } catch (err) {
+    console.error('Failed to load projects. Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY env vars:', err)
   }
-
-  if (search) {
-    query = query.or(
-      `title.ilike.%${search}%,description.ilike.%${search}%,tech_stack.ilike.%${search}%`
-    )
-  }
-
-  // Apply sorting
-  if (sort === 'latest') {
-    query = query.order('created_at', { ascending: false })
-  } else if (sort === 'price-low') {
-    query = query.order('price', { ascending: true })
-  } else if (sort === 'price-high') {
-    query = query.order('price', { ascending: false })
-  } else {
-    query = query.order('created_at', { ascending: false })
-  }
-
-  const { data: projects = [] } = await query
-
-  // Transform data to include author names
-  const projectsWithAuthors: ProjectWithAuthor[] = (projects as any[]).map((project) => ({
-    ...project,
-    author_name: project.users?.name || 'Unknown Author',
-  }))
 
   const categories = ['All', 'Web App', 'Mobile', 'Backend', 'Component Library', 'Other']
 
