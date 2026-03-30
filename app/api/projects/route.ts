@@ -63,9 +63,6 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
 
-    const body = await request.json()
-    const { title, description, tech_stack, category, price, cover_image_url } = body
-
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -74,17 +71,53 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const body = await request.json()
+    const { title, description, tech_stack, category, price, cover_image_url } = body
+
+    // Server-side validation
+    const ALLOWED_CATEGORIES = ['Web App', 'Mobile', 'Backend', 'Component Library', 'Other']
+
+    if (!title || typeof title !== 'string' || title.trim().length === 0) {
+      return NextResponse.json({ error: 'Title is required' }, { status: 400 })
+    }
+    if (title.trim().length > 200) {
+      return NextResponse.json({ error: 'Title must be 200 characters or fewer' }, { status: 400 })
+    }
+    if (!category || !ALLOWED_CATEGORIES.includes(category)) {
+      return NextResponse.json(
+        { error: `Category must be one of: ${ALLOWED_CATEGORIES.join(', ')}` },
+        { status: 400 },
+      )
+    }
+    if (price === undefined || price === null) {
+      return NextResponse.json({ error: 'Price is required' }, { status: 400 })
+    }
+    const parsedPrice = typeof price === 'number' ? price : parseFloat(price)
+    if (isNaN(parsedPrice) || parsedPrice < 0) {
+      return NextResponse.json({ error: 'Price must be a valid non-negative number' }, { status: 400 })
+    }
+    if (cover_image_url && typeof cover_image_url === 'string' && cover_image_url.length > 0) {
+      try {
+        const parsed = new URL(cover_image_url)
+        if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+          return NextResponse.json({ error: 'Cover image URL must be a valid http(s) URL' }, { status: 400 })
+        }
+      } catch {
+        return NextResponse.json({ error: 'Cover image URL must be a valid URL' }, { status: 400 })
+      }
+    }
+
     const { data, error } = await supabase
       .from('projects')
       .insert([
         {
-          title,
-          description,
-          tech_stack,
+          title: title.trim(),
+          description: typeof description === 'string' ? description.trim() || null : null,
+          tech_stack: typeof tech_stack === 'string' ? tech_stack.trim() || null : null,
           category,
-          price,
+          price: parsedPrice,
           author_id: user.id,
-          cover_image_url,
+          cover_image_url: typeof cover_image_url === 'string' ? cover_image_url.trim() || null : null,
         },
       ])
       .select()
