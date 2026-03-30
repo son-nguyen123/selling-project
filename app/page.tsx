@@ -1,13 +1,20 @@
-import { Search, Filter } from 'lucide-react'
+import { Filter } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import Header from '@/components/header'
 import Hero from '@/components/hero'
 import ProjectCard from '@/components/project-card'
 import Footer from '@/components/footer'
 import SortDropdown from '@/components/sort-dropdown'
+import SearchBar from '@/components/search-bar'
 import { createClient } from '@/lib/supabase/server'
+import { Suspense } from 'react'
+import SkeletonCard from '@/components/skeleton-card'
+
+interface Profile {
+  name: string | null
+  avatar_url: string | null
+}
 
 interface Project {
   id: number
@@ -16,14 +23,10 @@ interface Project {
   tech_stack: string | null
   category: string | null
   price: number
-  author_id: number | null
+  author_id: string | null
   cover_image_url: string | null
   created_at: string
-  updated_at: string
-}
-
-interface ProjectWithAuthor extends Project {
-  author_name?: string
+  profiles: Profile | null
 }
 
 export default async function Home({
@@ -33,15 +36,20 @@ export default async function Home({
 }) {
   const { search = '', category = 'All', sort = 'featured' } = await searchParams
 
-  // Fetch projects with author information
-  let projectsWithAuthors: ProjectWithAuthor[] = []
+  const supabase = await createClient()
 
+  // Get current user (null if not logged in)
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  // Fetch projects
+  let projects: Project[] = []
   try {
-    const supabase = await createClient()
-
     let query = supabase
       .from('projects')
-      .select(`
+      .select(
+        `
         id,
         title,
         description,
@@ -51,9 +59,9 @@ export default async function Home({
         author_id,
         cover_image_url,
         created_at,
-        updated_at,
-        users!author_id(name)
-      `)
+        profiles!author_id(name, avatar_url)
+      `,
+      )
       .limit(50)
 
     if (category !== 'All') {
@@ -62,11 +70,10 @@ export default async function Home({
 
     if (search) {
       query = query.or(
-        `title.ilike.%${search}%,description.ilike.%${search}%,tech_stack.ilike.%${search}%`
+        `title.ilike.%${search}%,description.ilike.%${search}%,tech_stack.ilike.%${search}%`,
       )
     }
 
-    // Apply sorting
     if (sort === 'latest') {
       query = query.order('created_at', { ascending: false })
     } else if (sort === 'price-low') {
@@ -77,17 +84,30 @@ export default async function Home({
       query = query.order('created_at', { ascending: false })
     }
 
-    const { data: projects = [], error } = await query
-
-    if (!error) {
-      // Transform data to include author names
-      projectsWithAuthors = (projects as any[]).map((project) => ({
-        ...project,
-        author_name: project.users?.name || 'Unknown Author',
-      }))
+    const { data, error } = await query
+    if (!error && data) {
+      projects = data as unknown as Project[]
     }
   } catch (err) {
-    console.error('Failed to load projects. Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY env vars:', err)
+    console.error(
+      'Failed to load projects. Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY env vars:',
+      err,
+    )
+  }
+
+  // Fetch user's wishlisted project IDs (only if logged in)
+  const wishlistedIds = new Set<number>()
+  if (user) {
+    try {
+      const { data: wishlist } = await supabase
+        .from('wishlists')
+        .select('project_id')
+        .eq('user_id', user.id)
+
+      wishlist?.forEach((row) => wishlistedIds.add(row.project_id as number))
+    } catch {
+      // Wishlist fetch is non-critical
+    }
   }
 
   const categories = ['All', 'Web App', 'Mobile', 'Backend', 'Component Library', 'Other']
@@ -101,15 +121,9 @@ export default async function Home({
         {/* Search and Filters Section */}
         <div className="space-y-6 mb-12">
           <div className="flex gap-4 flex-col lg:flex-row">
-            <form action="/" className="flex-1 relative" method="get">
-              <Search className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-              <Input
-                placeholder="Search by project name, description, or technology..."
-                className="pl-10"
-                name="search"
-                defaultValue={search}
-              />
-            </form>
+            <Suspense fallback={<div className="flex-1 h-10 bg-muted rounded-md animate-pulse" />}>
+              <SearchBar defaultValue={search} />
+            </Suspense>
             <Button variant="outline" className="gap-2">
               <Filter className="h-4 w-4" />
               Advanced
@@ -140,37 +154,43 @@ export default async function Home({
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-2xl font-bold">
             Featured Projects{' '}
-            <span className="text-muted-foreground font-normal text-lg">({projectsWithAuthors.length})</span>
+            <span className="text-muted-foreground font-normal text-lg">({projects.length})</span>
           </h2>
           <SortDropdown sort={sort} search={search} category={category} />
         </div>
 
         {/* Projects Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projectsWithAuthors.map((project) => (
+          {projects.map((project) => (
             <ProjectCard
               key={project.id}
               project={{
                 id: project.id,
                 title: project.title,
-                author: project.author_name || 'Unknown',
+                author: project.profiles?.name ?? 'Unknown',
                 price: parseFloat(String(project.price)),
-                image: project.cover_image_url || 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500&h=300&fit=crop',
+                image:
+                  project.cover_image_url ||
+                  'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500&h=300&fit=crop',
                 rating: 4.5,
                 reviews: 0,
                 category: project.category || 'Other',
-                tech: project.tech_stack ? project.tech_stack.split(',').map((t) => t.trim()) : [],
+                tech: project.tech_stack
+                  ? project.tech_stack.split(',').map((t) => t.trim())
+                  : [],
               }}
-              isWishlisted={false}
-             
+              initialIsWishlisted={wishlistedIds.has(project.id)}
+              isLoggedIn={!!user}
             />
           ))}
         </div>
 
         {/* Empty State */}
-        {projectsWithAuthors.length === 0 && (
+        {projects.length === 0 && (
           <div className="text-center py-16">
-            <p className="text-muted-foreground text-lg mb-4">No projects found matching your criteria.</p>
+            <p className="text-muted-foreground text-lg mb-4">
+              No projects found matching your criteria.
+            </p>
             <form action="/" method="get">
               <Button type="submit" variant="outline">
                 Clear Filters
@@ -184,3 +204,4 @@ export default async function Home({
     </div>
   )
 }
+
