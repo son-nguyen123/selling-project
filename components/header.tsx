@@ -10,10 +10,11 @@ export default async function Header() {
     } = await supabase.auth.getUser()
 
     let userInfo = null
+    let isAdmin = false
     if (user) {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('name, avatar_url')
+        .select('name, avatar_url, role')
         .eq('id', user.id)
         .single()
 
@@ -23,12 +24,15 @@ export default async function Header() {
         avatar_url: profile?.avatar_url ?? (user.user_metadata?.avatar_url as string | null) ?? (user.user_metadata?.picture as string | null) ?? null,
         email: user.email ?? null,
       }
+
+      // Use role from profiles if available, otherwise fall back to email check
+      isAdmin = (profile as any)?.role === 'admin' || (user.email?.endsWith('@admin.com') ?? false)
     }
 
-    return <HeaderClient user={userInfo} />
+    return <HeaderClient user={userInfo} isAdmin={isAdmin} />
   } catch {
     // Fallback to unauthenticated header if Supabase is unavailable
-    return <HeaderClient user={null} />
+    return <HeaderClient user={null} isAdmin={false} />
   }
 }
 

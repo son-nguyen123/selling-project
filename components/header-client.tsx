@@ -23,6 +23,7 @@ interface UserInfo {
 
 interface HeaderClientProps {
   user: UserInfo | null
+  isAdmin?: boolean
 }
 
 function HeaderSearch() {
@@ -86,7 +87,7 @@ function HeaderSearch() {
   )
 }
 
-export default function HeaderClient({ user }: HeaderClientProps) {
+export default function HeaderClient({ user, isAdmin = false }: HeaderClientProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const router = useRouter()
 
@@ -115,11 +116,13 @@ export default function HeaderClient({ user }: HeaderClientProps) {
 
         {/* Right actions */}
         <div className="flex items-center gap-4 shrink-0 ml-auto md:ml-0">
-          {/* Sell link */}
-          <Link href="/upload" className="hidden md:flex flex-col items-center gap-0.5 text-foreground hover:text-accent transition">
-            <Upload className="h-5 w-5" />
-            <span className="text-xs">Bán hàng</span>
-          </Link>
+          {/* Sell link - admin only */}
+          {isAdmin && (
+            <Link href="/upload" className="hidden md:flex flex-col items-center gap-0.5 text-foreground hover:text-accent transition">
+              <Upload className="h-5 w-5" />
+              <span className="text-xs">Bán hàng</span>
+            </Link>
+          )}
 
           {/* Cart icon placeholder */}
           <Link href="/" className="hidden md:flex flex-col items-center gap-0.5 text-foreground hover:text-accent transition">
@@ -160,12 +163,14 @@ export default function HeaderClient({ user }: HeaderClientProps) {
                     Dashboard
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/upload" className="gap-2 cursor-pointer">
-                    <Upload className="h-4 w-4" />
-                    Đăng sản phẩm
-                  </Link>
-                </DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/upload" className="gap-2 cursor-pointer">
+                      <Upload className="h-4 w-4" />
+                      Đăng sản phẩm
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="gap-2 cursor-pointer text-destructive focus:text-destructive">
                   <LogOut className="h-4 w-4" />
@@ -220,13 +225,15 @@ export default function HeaderClient({ user }: HeaderClientProps) {
             >
               Trang chủ
             </Link>
-            <Link
-              href="/upload"
-              className="text-foreground hover:text-accent transition font-medium py-2"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Bán hàng
-            </Link>
+            {isAdmin && (
+              <Link
+                href="/upload"
+                className="text-foreground hover:text-accent transition font-medium py-2"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Bán hàng
+              </Link>
+            )}
             {user ? (
               <>
                 <Link
