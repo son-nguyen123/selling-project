@@ -2,10 +2,11 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Header from '@/components/header'
 import Link from 'next/link'
-import { LayoutDashboard, Package, ShoppingCart } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, FolderOpen } from 'lucide-react'
 
 const navItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/admin/projects', label: 'Projects', icon: FolderOpen },
   { href: '/admin/products', label: 'Products', icon: Package },
   { href: '/admin/orders', label: 'Orders', icon: ShoppingCart },
 ]
