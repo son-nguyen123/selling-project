@@ -15,6 +15,17 @@ export default async function UploadPage() {
     redirect('/login')
   }
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  const isAdmin = (profile as any)?.role === 'admin' || (user.email?.endsWith('@admin.com') ?? false)
+  if (!isAdmin) {
+    redirect('/')
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Header />

@@ -71,6 +71,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Only admin users can create products – check role from profiles, with email fallback
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+    const adminUser = (profile as any)?.role === 'admin' || (user.email?.endsWith('@admin.com') ?? false)
+    if (!adminUser) {
+      return NextResponse.json({ error: 'Forbidden: admin access required' }, { status: 403 })
+    }
+
     const body = await request.json()
     const { title, description, tech_stack, category, price, cover_image_url } = body
 

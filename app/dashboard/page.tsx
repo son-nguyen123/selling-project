@@ -2,10 +2,10 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Header from '@/components/header'
 import Footer from '@/components/footer'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { Plus, Eye, ShoppingCart, Download } from 'lucide-react'
+import { Eye, ShoppingCart, Download } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 
 interface Project {
   id: number
@@ -83,12 +83,6 @@ export default async function DashboardPage() {
     redirect('/login')
   }
 
-  const { data: projects = [] } = await supabase
-    .from('projects')
-    .select('id, title, category, price, cover_image_url, created_at')
-    .eq('author_id', user.id)
-    .order('created_at', { ascending: false })
-
   const { data: wishlistRows = [] } = await supabase
     .from('wishlists')
     .select('project_id, projects(id, title, category, price, cover_image_url)')
@@ -117,41 +111,7 @@ export default async function DashboardPage() {
             <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
             <p className="text-muted-foreground text-sm mt-0.5">Chào mừng trở lại, {userName}</p>
           </div>
-          <Link href="/upload">
-            <Button className="gap-2 bg-accent hover:bg-accent/90 text-accent-foreground rounded-sm" size="sm">
-              <Plus className="h-4 w-4" />
-              Đăng sản phẩm mới
-            </Button>
-          </Link>
         </div>
-
-        {/* My Projects */}
-        <section className="mb-10">
-          <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border">
-            <h2 className="text-base font-semibold text-foreground uppercase tracking-wide">
-              Sản phẩm của tôi
-            </h2>
-            <span className="text-sm text-muted-foreground">({(projects as Project[]).length})</span>
-          </div>
-
-          {(projects as Project[]).length === 0 ? (
-            <div className="text-center py-12 border border-dashed border-border rounded-sm">
-              <p className="text-muted-foreground mb-4 text-sm">Bạn chưa đăng sản phẩm nào.</p>
-              <Link href="/upload">
-                <Button variant="outline" className="gap-2 rounded-sm" size="sm">
-                  <Plus className="h-4 w-4" />
-                  Đăng sản phẩm đầu tiên
-                </Button>
-              </Link>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
-              {(projects as Project[]).map((project) => (
-                <ShopeeCard key={project.id} project={project} />
-              ))}
-            </div>
-          )}
-        </section>
 
         {/* Wishlist */}
         <section>
