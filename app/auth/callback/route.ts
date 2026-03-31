@@ -11,8 +11,24 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    if (!error && data.user) {
+      // Ensure a profile row exists (handles both Google OAuth and email signups)
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', data.user.id)
+        .single()
+
+      if (!existingProfile) {
+        const meta = data.user.user_metadata ?? {}
+        await supabase.from('profiles').upsert({
+          id: data.user.id,
+          name: meta.full_name ?? meta.name ?? null,
+          avatar_url: meta.avatar_url ?? meta.picture ?? null,
+        })
+      }
+
       return NextResponse.redirect(`${origin}${next}`)
     }
   }
