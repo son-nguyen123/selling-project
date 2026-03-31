@@ -56,7 +56,7 @@ export default async function AdminProductsPage({
               {(products ?? []).map((product) => (
                 <tr key={product.id} className="border-b border-border/50 hover:bg-muted/30">
                   <td className="px-4 py-3 font-medium text-foreground">
-                    <Link href={`/store/${product.id}`} className="hover:text-primary hover:underline">
+                    <Link href={`/admin/products/${product.id}`} className="hover:text-primary hover:underline">
                       {product.name}
                     </Link>
                   </td>
