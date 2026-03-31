@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Header from '@/components/header'
 import Footer from '@/components/footer'
-import { Download, ArrowLeft, User } from 'lucide-react'
+import { Download, ArrowLeft, User, ShoppingCart } from 'lucide-react'
 import Link from 'next/link'
 
 interface Profile {
@@ -22,7 +22,7 @@ interface Project {
   cover_image_url: string | null
   created_at: string
   author_id: string | null
-  profiles: Profile | null
+  profiles?: Profile | null
 }
 
 export default async function ProjectDetailPage({
@@ -33,21 +33,11 @@ export default async function ProjectDetailPage({
   const { id } = await params
   const supabase = await createClient()
 
+  // Fetch project without profile join first for resilience
   const { data, error } = await supabase
     .from('projects')
     .select(
-      `
-      id,
-      title,
-      description,
-      tech_stack,
-      category,
-      price,
-      cover_image_url,
-      created_at,
-      author_id,
-      profiles!author_id(name, avatar_url)
-    `,
+      `id, title, description, tech_stack, category, price, cover_image_url, created_at, author_id`,
     )
     .eq('id', id)
     .single()
@@ -57,10 +47,22 @@ export default async function ProjectDetailPage({
   }
 
   const project = data as unknown as Project
+
+  // Optionally fetch author profile (non-critical)
+  let authorProfile: Profile | null = null
+  if (project.author_id) {
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('name, avatar_url')
+      .eq('id', project.author_id)
+      .single()
+    authorProfile = profileData ?? null
+  }
+
   const techList = project.tech_stack
     ? project.tech_stack.split(',').map((t) => t.trim())
     : []
-  const authorName = project.profiles?.name ?? 'Unknown Author'
+  const authorName = authorProfile?.name ?? 'Unknown Author'
 
   return (
     <div className="min-h-screen bg-background">
@@ -113,7 +115,7 @@ export default async function ProjectDetailPage({
           </div>
 
           {/* Right: Purchase Card */}
-          <div className="space-y-4">
+          <div className="space-y-4" id="buy-section">
             <div className="bg-card border border-border rounded-xl p-6 sticky top-24">
               <div className="mb-1">
                 <Badge variant="secondary">{project.category ?? 'Other'}</Badge>
@@ -124,9 +126,9 @@ export default async function ProjectDetailPage({
               {/* Author */}
               <div className="flex items-center gap-2 mb-6 pb-6 border-b border-border">
                 <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center overflow-hidden">
-                  {project.profiles?.avatar_url ? (
+                  {authorProfile?.avatar_url ? (
                     <img
-                      src={project.profiles.avatar_url}
+                      src={authorProfile.avatar_url}
                       alt={authorName}
                       className="w-full h-full object-cover"
                     />
@@ -144,10 +146,16 @@ export default async function ProjectDetailPage({
                 <span className="text-sm text-muted-foreground">one-time</span>
               </div>
 
-              <Button className="w-full gap-2 py-6 text-base" size="lg">
-                <Download className="h-5 w-5" />
-                Buy Now
-              </Button>
+              <div className="flex flex-col gap-3">
+                <Button className="w-full gap-2 py-6 text-base" size="lg">
+                  <Download className="h-5 w-5" />
+                  Mua Ngay
+                </Button>
+                <Button variant="outline" className="w-full gap-2 py-5 text-base" size="lg">
+                  <ShoppingCart className="h-5 w-5" />
+                  Đặt Hàng
+                </Button>
+              </div>
 
               <p className="text-xs text-muted-foreground text-center mt-4">
                 Instant download after purchase

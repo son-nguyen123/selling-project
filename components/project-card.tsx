@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Heart, Star, Download, Eye } from 'lucide-react'
+import { Heart, Star, ShoppingCart, Eye, Download } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -150,17 +150,31 @@ export default function ProjectCard({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between mt-auto pt-4 border-t border-border">
+        <div className="mt-auto pt-4 border-t border-border space-y-3">
           <div className="flex items-baseline gap-1">
             <span className="text-2xl font-bold text-foreground">${project.price}</span>
             <span className="text-xs text-muted-foreground">one-time</span>
           </div>
-          <Link href={`/projects/${project.id}`}>
-            <Button size="sm" className="gap-2">
-              <Download className="h-4 w-4" />
-              Buy Now
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            <Link href={`/projects/${project.id}`} className="flex-1">
+              <Button size="sm" variant="outline" className="w-full gap-1">
+                <Eye className="h-3 w-3" />
+                Xem Thêm
+              </Button>
+            </Link>
+            <Link href={`/projects/${project.id}#buy-section`} className="flex-1">
+              <Button size="sm" variant="outline" className="w-full gap-1">
+                <ShoppingCart className="h-3 w-3" />
+                Đặt Hàng
+              </Button>
+            </Link>
+            <Link href={`/projects/${project.id}#buy-section`} className="flex-1">
+              <Button size="sm" className="w-full gap-1">
+                <Download className="h-3 w-3" />
+                Mua Ngay
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </Card>
