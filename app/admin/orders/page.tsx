@@ -1,14 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
-import { Card } from '@/components/ui/card'
 import Link from 'next/link'
 import AdminOrderStatusUpdate from './order-status-update'
 
 const PAGE_SIZE = 20
 
 const STATUS_COLORS: Record<string, string> = {
-  new: 'bg-blue-500/20 text-blue-400',
-  processing: 'bg-yellow-500/20 text-yellow-400',
-  delivered: 'bg-green-500/20 text-green-400',
+  new: 'bg-blue-500/20 text-blue-300',
+  processing: 'bg-yellow-500/20 text-yellow-300',
+  delivered: 'bg-green-500/20 text-green-300',
+  cancelled: 'bg-red-500/20 text-red-300',
 }
 
 const STATUSES = ['All', 'new', 'processing', 'delivered']
@@ -40,7 +40,7 @@ export default async function AdminOrdersPage({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">Orders</h1>
+      <h1 className="text-2xl font-bold text-white">Quản lý đơn hàng</h1>
 
       {/* Status filter */}
       <div className="flex flex-wrap gap-2">
@@ -53,8 +53,8 @@ export default async function AdminOrdersPage({
               href={href}
               className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors capitalize ${
                 isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  ? 'bg-accent text-white'
+                  : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-100'
               }`}
             >
               {s}
@@ -63,41 +63,41 @@ export default async function AdminOrdersPage({
         })}
       </div>
 
-      <Card>
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border">
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Order ID</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Customer</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Total</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Date</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Actions</th>
+              <tr className="border-b border-zinc-800 bg-zinc-800/50">
+                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">Order ID</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">Khách hàng</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">Tổng tiền</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">Trạng thái</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">Ngày</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">Thao tác</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-zinc-800">
               {(orders ?? []).map((order) => (
-                <tr key={order.id} className="border-b border-border/50 hover:bg-muted/30">
+                <tr key={order.id} className="hover:bg-zinc-800/40 transition-colors">
                   <td className="px-4 py-3 font-mono text-xs">
-                    <Link href={`/admin/orders/${order.id}`} className="text-primary hover:underline">
+                    <Link href={`/admin/orders/${order.id}`} className="text-accent hover:underline">
                       {order.id.slice(0, 8)}…
                     </Link>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="text-foreground">{order.customer_name || '—'}</div>
-                    <div className="text-xs text-muted-foreground">{order.customer_email}</div>
+                    <div className="text-zinc-200">{order.customer_name || '—'}</div>
+                    <div className="text-xs text-zinc-500">{order.customer_email}</div>
                   </td>
-                  <td className="px-4 py-3 font-semibold">
+                  <td className="px-4 py-3 font-semibold text-white">
                     ${(order.total_price ?? 0).toFixed(2)}
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${STATUS_COLORS[order.status] ?? ''}`}>
+                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${STATUS_COLORS[order.status] ?? 'bg-zinc-700 text-zinc-300'}`}>
                       {order.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {new Date(order.created_at).toLocaleDateString()}
+                  <td className="px-4 py-3 text-zinc-500 text-xs">
+                    {new Date(order.created_at).toLocaleDateString('vi-VN')}
                   </td>
                   <td className="px-4 py-3">
                     <AdminOrderStatusUpdate orderId={order.id} currentStatus={order.status} />
@@ -106,15 +106,15 @@ export default async function AdminOrdersPage({
               ))}
               {(orders ?? []).length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                    No orders found.
+                  <td colSpan={6} className="px-4 py-12 text-center text-zinc-600">
+                    Không tìm thấy đơn hàng nào.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-      </Card>
+      </div>
 
       {/* Pagination */}
       {totalPages > 1 && (
@@ -125,8 +125,8 @@ export default async function AdminOrdersPage({
               href={`/admin/orders?page=${p}${status && status !== 'All' ? `&status=${status}` : ''}`}
               className={`rounded px-3 py-1.5 text-sm font-medium transition-colors ${
                 p === page
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  ? 'bg-accent text-white'
+                  : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
               }`}
             >
               {p}
@@ -137,3 +137,4 @@ export default async function AdminOrdersPage({
     </div>
   )
 }
+

@@ -1,15 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import Header from '@/components/header'
+import AdminNav from '@/components/admin/admin-nav'
 import Link from 'next/link'
-import { LayoutDashboard, Package, ShoppingCart, FolderOpen } from 'lucide-react'
-
-const navItems = [
-  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/admin/projects', label: 'Projects', icon: FolderOpen },
-  { href: '/admin/products', label: 'Products', icon: Package },
-  { href: '/admin/orders', label: 'Orders', icon: ShoppingCart },
-]
+import { LayoutDashboard } from 'lucide-react'
 
 export default async function AdminLayout({
   children,
@@ -24,30 +17,26 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex gap-8 py-8">
-          {/* Sidebar */}
-          <aside className="w-52 shrink-0">
-            <nav className="space-y-1">
-              {navItems.map(({ href, label, icon: Icon }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </Link>
-              ))}
-            </nav>
-          </aside>
-
-          {/* Content */}
-          <main className="flex-1 min-w-0">{children}</main>
+    <div className="min-h-screen bg-zinc-950 text-foreground flex flex-col">
+      {/* Admin top bar */}
+      <header className="h-14 border-b border-zinc-800 bg-zinc-900 flex items-center px-6 shrink-0">
+        <Link href="/admin" className="flex items-center gap-2">
+          <div className="bg-accent rounded p-1">
+            <LayoutDashboard className="h-4 w-4 text-white" />
+          </div>
+          <span className="font-bold text-white text-sm tracking-tight">ProjectHub Admin</span>
+        </Link>
+        <div className="ml-auto flex items-center gap-3">
+          <span className="text-xs text-zinc-400 hidden sm:block">{user.email}</span>
         </div>
+      </header>
+
+      {/* Body: sidebar + content */}
+      <div className="flex flex-1 overflow-hidden">
+        <AdminNav adminEmail={user.email ?? ''} />
+        <main className="flex-1 overflow-y-auto p-6 bg-zinc-950 min-w-0">{children}</main>
       </div>
     </div>
   )
 }
+
