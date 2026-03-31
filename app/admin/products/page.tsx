@@ -1,8 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card } from '@/components/ui/card'
 import { Plus } from 'lucide-react'
 import AdminProductActions from './product-actions'
 
@@ -30,51 +27,52 @@ export default async function AdminProductsPage({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Products</h1>
-        <Button asChild>
-          <Link href="/admin/products/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Add New Product
-          </Link>
-        </Button>
+        <h1 className="text-2xl font-bold text-white">Quản lý sản phẩm</h1>
+        <Link
+          href="/admin/products/new"
+          className="flex items-center gap-1.5 rounded-md bg-accent hover:bg-accent/90 text-white text-xs font-medium px-3 py-2 transition-colors"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Thêm sản phẩm mới
+        </Link>
       </div>
 
-      <Card>
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border">
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Name</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Category</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Price</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Stock</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Created</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Actions</th>
+              <tr className="border-b border-zinc-800 bg-zinc-800/50">
+                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">Tên sản phẩm</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">Danh mục</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">Giá</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">Tồn kho</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">Ngày tạo</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">Thao tác</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-zinc-800">
               {(products ?? []).map((product) => (
-                <tr key={product.id} className="border-b border-border/50 hover:bg-muted/30">
-                  <td className="px-4 py-3 font-medium text-foreground">
-                    <Link href={`/admin/products/${product.id}`} className="hover:text-primary hover:underline">
+                <tr key={product.id} className="hover:bg-zinc-800/40 transition-colors">
+                  <td className="px-4 py-3 font-medium text-zinc-200">
+                    <Link href={`/admin/products/${product.id}`} className="hover:text-accent hover:underline">
                       {product.name}
                     </Link>
                   </td>
                   <td className="px-4 py-3">
                     {product.category ? (
-                      <Badge variant="secondary" className="text-xs">{product.category}</Badge>
+                      <span className="rounded-full bg-zinc-700 text-zinc-300 text-xs px-2.5 py-0.5">{product.category}</span>
                     ) : (
-                      <span className="text-muted-foreground">—</span>
+                      <span className="text-zinc-600">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 font-medium">${product.price.toFixed(2)}</td>
+                  <td className="px-4 py-3 font-medium text-white">${product.price.toFixed(2)}</td>
                   <td className="px-4 py-3">
-                    <span className={product.stock > 0 ? 'text-green-500' : 'text-destructive'}>
+                    <span className={product.stock > 0 ? 'text-green-400' : 'text-red-400'}>
                       {product.stock}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {new Date(product.created_at).toLocaleDateString()}
+                  <td className="px-4 py-3 text-zinc-500 text-xs">
+                    {new Date(product.created_at).toLocaleDateString('vi-VN')}
                   </td>
                   <td className="px-4 py-3">
                     <AdminProductActions productId={product.id} />
@@ -83,10 +81,10 @@ export default async function AdminProductsPage({
               ))}
               {(products ?? []).length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                    No products found.{' '}
-                    <Link href="/admin/products/new" className="text-primary underline-offset-4 hover:underline">
-                      Add one
+                  <td colSpan={6} className="px-4 py-12 text-center text-zinc-600">
+                    Chưa có sản phẩm nào.{' '}
+                    <Link href="/admin/products/new" className="text-accent hover:underline">
+                      Thêm ngay
                     </Link>
                   </td>
                 </tr>
@@ -94,7 +92,7 @@ export default async function AdminProductsPage({
             </tbody>
           </table>
         </div>
-      </Card>
+      </div>
 
       {/* Pagination */}
       {totalPages > 1 && (
@@ -105,8 +103,8 @@ export default async function AdminProductsPage({
               href={`/admin/products?page=${p}`}
               className={`rounded px-3 py-1.5 text-sm font-medium transition-colors ${
                 p === page
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  ? 'bg-accent text-white'
+                  : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
               }`}
             >
               {p}
@@ -117,3 +115,4 @@ export default async function AdminProductsPage({
     </div>
   )
 }
+

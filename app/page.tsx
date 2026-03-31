@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Suspense } from 'react'
 import SkeletonCard from '@/components/skeleton-card'
 import { redirect } from 'next/navigation'
+import StoreProductCard from '@/components/store/store-product-card'
 
 interface Profile {
   name: string | null
@@ -25,6 +26,16 @@ interface Project {
   cover_image_url: string | null
   created_at: string
   profiles: Profile | null
+}
+
+interface StoreProduct {
+  id: string
+  name: string
+  price: number
+  description?: string | null
+  category?: string | null
+  stock: number
+  dashboard_image_url?: string | null
 }
 
 export default async function Home({
@@ -118,6 +129,19 @@ export default async function Home({
     }
   }
 
+  // Fetch store products (admin-managed products)
+  let storeProducts: StoreProduct[] = []
+  try {
+    const { data: spData } = await supabase
+      .from('store_products')
+      .select('id, name, price, description, category, stock, dashboard_image_url')
+      .order('created_at', { ascending: false })
+      .limit(10)
+    if (spData) storeProducts = spData as StoreProduct[]
+  } catch {
+    // Non-critical
+  }
+
   const categories = ['All', 'Web App', 'Mobile', 'Backend', 'Component Library', 'Other']
 
   return (
@@ -197,6 +221,25 @@ export default async function Home({
               </button>
             </form>
           </div>
+        )}
+
+        {/* Store Products Section (admin-managed) */}
+        {storeProducts.length > 0 && (
+          <section className="mt-10">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-border">
+              <h2 className="text-base font-semibold text-foreground uppercase tracking-wide">
+                Sản phẩm nổi bật
+              </h2>
+              <a href="/store" className="text-sm text-accent hover:underline">
+                Xem tất cả →
+              </a>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {storeProducts.map((product) => (
+                <StoreProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          </section>
         )}
       </main>
 

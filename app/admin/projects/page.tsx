@@ -1,8 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card } from '@/components/ui/card'
 import { Plus } from 'lucide-react'
 import AdminProjectActions from './project-actions'
 
@@ -30,43 +27,42 @@ export default async function AdminProjectsPage({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Projects (Homepage)</h1>
-        <Button asChild>
-          <Link href="/admin/projects/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Add New Project
-          </Link>
-        </Button>
+        <h1 className="text-2xl font-bold text-white">Quản lý dự án</h1>
+        <Link
+          href="/admin/projects/new"
+          className="flex items-center gap-1.5 rounded-md bg-accent hover:bg-accent/90 text-white text-xs font-medium px-3 py-2 transition-colors"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Thêm dự án mới
+        </Link>
       </div>
 
-      <Card>
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border">
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Title</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Category</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Price</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Created</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Actions</th>
+              <tr className="border-b border-zinc-800 bg-zinc-800/50">
+                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">Tiêu đề</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">Danh mục</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">Giá</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">Ngày tạo</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">Thao tác</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-zinc-800">
               {(projects ?? []).map((project) => (
-                <tr key={project.id} className="border-b border-border/50 hover:bg-muted/30">
-                  <td className="px-4 py-3 font-medium text-foreground">{project.title}</td>
+                <tr key={project.id} className="hover:bg-zinc-800/40 transition-colors">
+                  <td className="px-4 py-3 font-medium text-zinc-200">{project.title}</td>
                   <td className="px-4 py-3">
                     {project.category ? (
-                      <Badge variant="secondary" className="text-xs">
-                        {project.category}
-                      </Badge>
+                      <span className="rounded-full bg-zinc-700 text-zinc-300 text-xs px-2.5 py-0.5">{project.category}</span>
                     ) : (
-                      <span className="text-muted-foreground">—</span>
+                      <span className="text-zinc-600">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 font-medium">${Number(project.price).toFixed(2)}</td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {new Date(project.created_at).toLocaleDateString()}
+                  <td className="px-4 py-3 font-medium text-white">${Number(project.price).toFixed(2)}</td>
+                  <td className="px-4 py-3 text-zinc-500 text-xs">
+                    {new Date(project.created_at).toLocaleDateString('vi-VN')}
                   </td>
                   <td className="px-4 py-3">
                     <AdminProjectActions projectId={project.id} />
@@ -75,13 +71,13 @@ export default async function AdminProjectsPage({
               ))}
               {(projects ?? []).length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
-                    No projects yet.{' '}
+                  <td colSpan={5} className="px-4 py-12 text-center text-zinc-600">
+                    Chưa có dự án nào.{' '}
                     <Link
                       href="/admin/projects/new"
-                      className="text-primary underline-offset-4 hover:underline"
+                      className="text-accent hover:underline"
                     >
-                      Add one
+                      Thêm ngay
                     </Link>
                   </td>
                 </tr>
@@ -89,7 +85,7 @@ export default async function AdminProjectsPage({
             </tbody>
           </table>
         </div>
-      </Card>
+      </div>
 
       {totalPages > 1 && (
         <div className="flex justify-center gap-2">
@@ -99,8 +95,8 @@ export default async function AdminProjectsPage({
               href={`/admin/projects?page=${p}`}
               className={`rounded px-3 py-1.5 text-sm font-medium transition-colors ${
                 p === page
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  ? 'bg-accent text-white'
+                  : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
               }`}
             >
               {p}
@@ -111,3 +107,4 @@ export default async function AdminProjectsPage({
     </div>
   )
 }
+
