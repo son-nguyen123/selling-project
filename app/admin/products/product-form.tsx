@@ -121,8 +121,9 @@ export default function ProductForm({ initialData, mode }: ProductFormProps) {
     }
     setSubmitting(true)
     try {
-      const specsObj: Record<string, string> = {}
-      specs.filter((s) => s.key).forEach((s) => { specsObj[s.key] = s.value })
+      const specsObj = specs
+        .filter((s) => s.key.trim() && s.value.trim())
+        .reduce<Record<string, string>>((acc, s) => ({ ...acc, [s.key.trim()]: s.value.trim() }), {})
 
       const payload = {
         name,

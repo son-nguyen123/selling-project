@@ -167,6 +167,7 @@ export function ProductDetail({ product, reviews, currentUserId }: ProductDetail
                 muted
                 loop
                 playsInline
+                controls
                 className="h-full w-full object-cover"
               />
             ) : activeImage ? (
