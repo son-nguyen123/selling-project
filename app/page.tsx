@@ -1,12 +1,9 @@
-import { Filter } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import Header from '@/components/header'
 import Hero from '@/components/hero'
 import ProjectCard from '@/components/project-card'
 import Footer from '@/components/footer'
 import SortDropdown from '@/components/sort-dropdown'
-import SearchBar from '@/components/search-bar'
 import { createClient } from '@/lib/supabase/server'
 import { Suspense } from 'react'
 import SkeletonCard from '@/components/skeleton-card'
@@ -128,21 +125,11 @@ export default async function Home({
       <Header />
       <Hero />
 
-      <main className="max-w-7xl mx-auto px-4 py-12">
-        {/* Search and Filters Section */}
-        <div className="space-y-6 mb-12">
-          <div className="flex gap-4 flex-col lg:flex-row">
-            <Suspense fallback={<div className="flex-1 h-10 bg-muted rounded-md animate-pulse" />}>
-              <SearchBar defaultValue={search} />
-            </Suspense>
-            <Button variant="outline" className="gap-2">
-              <Filter className="h-4 w-4" />
-              Advanced
-            </Button>
-          </div>
-
+      <main className="max-w-7xl mx-auto px-4 py-6">
+        {/* Category + Sort row */}
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
           {/* Category Pills */}
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-1.5 flex-wrap">
             {categories.map((cat) => (
               <form key={cat} action="/" method="get" className="inline">
                 <input type="hidden" name="category" value={cat} />
@@ -151,7 +138,7 @@ export default async function Home({
                 <button type="submit">
                   <Badge
                     variant={category === cat ? 'default' : 'outline'}
-                    className="cursor-pointer px-4 py-2"
+                    className={`cursor-pointer px-3 py-1 rounded-sm text-xs ${category === cat ? 'bg-accent text-accent-foreground border-accent' : ''}`}
                   >
                     {cat}
                   </Badge>
@@ -159,53 +146,55 @@ export default async function Home({
               </form>
             ))}
           </div>
+
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">{projects.length} sản phẩm</span>
+            <SortDropdown sort={sort} search={search} category={category} />
+          </div>
         </div>
 
-        {/* Results Header */}
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-2xl font-bold">
-            Featured Projects{' '}
-            <span className="text-muted-foreground font-normal text-lg">({projects.length})</span>
-          </h2>
-          <SortDropdown sort={sort} search={search} category={category} />
-        </div>
-
-        {/* Projects Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project) => (
-            <ProjectCard
-              key={project.id}
-              project={{
-                id: project.id,
-                title: project.title,
-                author: project.profiles?.name ?? 'Unknown',
-                price: parseFloat(String(project.price)),
-                image:
-                  project.cover_image_url ||
-                  'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500&h=300&fit=crop',
-                rating: 4.5,
-                reviews: 0,
-                category: project.category || 'Other',
-                tech: project.tech_stack
-                  ? project.tech_stack.split(',').map((t) => t.trim())
-                  : [],
-              }}
-              initialIsWishlisted={wishlistedIds.has(project.id)}
-              isLoggedIn={!!user}
-            />
-          ))}
-        </div>
+        {/* Shopee-style product grid: 2 cols mobile → 3 tablet → 4 md → 5 lg */}
+        <Suspense fallback={
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
+            {Array.from({ length: 10 }).map((_, i) => <SkeletonCard key={i} />)}
+          </div>
+        }>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
+            {projects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={{
+                  id: project.id,
+                  title: project.title,
+                  author: project.profiles?.name ?? 'Unknown',
+                  price: parseFloat(String(project.price)),
+                  image:
+                    project.cover_image_url ||
+                    'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500&h=500&fit=crop',
+                  rating: 4.5,
+                  reviews: 0,
+                  category: project.category || 'Other',
+                  tech: project.tech_stack
+                    ? project.tech_stack.split(',').map((t) => t.trim())
+                    : [],
+                }}
+                initialIsWishlisted={wishlistedIds.has(project.id)}
+                isLoggedIn={!!user}
+              />
+            ))}
+          </div>
+        </Suspense>
 
         {/* Empty State */}
         {projects.length === 0 && (
-          <div className="text-center py-16">
+          <div className="text-center py-16 border border-dashed border-border rounded-sm">
             <p className="text-muted-foreground text-lg mb-4">
-              No projects found matching your criteria.
+              Không tìm thấy dự án nào phù hợp.
             </p>
             <form action="/" method="get">
-              <Button type="submit" variant="outline">
-                Clear Filters
-              </Button>
+              <button type="submit" className="px-4 py-2 border border-border rounded-sm text-sm hover:border-accent hover:text-accent transition-colors">
+                Xoá bộ lọc
+              </button>
             </form>
           </div>
         )}
