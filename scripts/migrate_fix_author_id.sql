@@ -15,7 +15,8 @@
 
 DO $$
 DECLARE
-  col_type text;
+  col_type      text;
+  affected_rows bigint;
 BEGIN
   SELECT data_type INTO col_type
   FROM information_schema.columns
@@ -24,18 +25,23 @@ BEGIN
     AND column_name  = 'author_id';
 
   IF col_type IN ('integer', 'bigint', 'smallint') THEN
+    SELECT COUNT(*) INTO affected_rows
+    FROM public.projects
+    WHERE author_id IS NOT NULL;
+
+    RAISE NOTICE 'Migration starting: % row(s) with a non-NULL author_id will be set to NULL (integer values cannot be cast to UUID). Re-assign them after migration if needed.', affected_rows;
+
     -- 1. Remove the foreign key constraint referencing profiles(id)
     ALTER TABLE public.projects
       DROP CONSTRAINT IF EXISTS projects_author_id_fkey;
 
-    -- 2. NULL out existing integer values (they cannot be cast to UUID)
-    UPDATE public.projects SET author_id = NULL;
-
-    -- 3. Change the column type to UUID
+    -- 2. Change the column type to UUID.
+    --    The USING clause sets all existing integer values to NULL because
+    --    integer IDs cannot be meaningfully cast to UUIDs.
     ALTER TABLE public.projects
       ALTER COLUMN author_id TYPE UUID USING NULL::uuid;
 
-    -- 4. Restore the foreign key constraint
+    -- 3. Restore the foreign key constraint
     ALTER TABLE public.projects
       ADD CONSTRAINT projects_author_id_fkey
       FOREIGN KEY (author_id)
