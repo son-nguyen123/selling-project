@@ -48,7 +48,10 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single()
 
-  const userName = profile.data?.name ?? user.email
+  const userName =
+    profile.data?.name ??
+    (user.user_metadata?.full_name as string | undefined) ??
+    user.email
 
   return (
     <div className="min-h-screen bg-background">

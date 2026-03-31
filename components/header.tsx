@@ -19,8 +19,8 @@ export default async function Header() {
 
       userInfo = {
         id: user.id,
-        name: profile?.name ?? null,
-        avatar_url: profile?.avatar_url ?? null,
+        name: profile?.name ?? (user.user_metadata?.full_name as string | null) ?? null,
+        avatar_url: profile?.avatar_url ?? (user.user_metadata?.avatar_url as string | null) ?? (user.user_metadata?.picture as string | null) ?? null,
         email: user.email ?? null,
       }
     }
