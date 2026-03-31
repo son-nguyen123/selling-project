@@ -10,6 +10,7 @@ import SearchBar from '@/components/search-bar'
 import { createClient } from '@/lib/supabase/server'
 import { Suspense } from 'react'
 import SkeletonCard from '@/components/skeleton-card'
+import { redirect } from 'next/navigation'
 
 interface Profile {
   name: string | null
@@ -32,9 +33,19 @@ interface Project {
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string; category?: string; sort?: string }>
+  searchParams: Promise<{
+    search?: string
+    category?: string
+    sort?: string
+    error?: string
+    error_code?: string
+  }>
 }) {
-  const { search = '', category = 'All', sort = 'featured' } = await searchParams
+  const { search = '', category = 'All', sort = 'featured', error_code } = await searchParams
+
+  if (error_code === 'otp_expired') {
+    redirect('/check-email?expired=true')
+  }
 
   const supabase = await createClient()
 
