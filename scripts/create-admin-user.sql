@@ -44,11 +44,43 @@ WHERE NOT EXISTS (
 );
 
 -- Bước 2: Tạo profile cho admin user (tự động nếu trigger đã được thiết lập)
-INSERT INTO public.profiles (id, name, avatar_url)
-SELECT id, 'Admin', NULL
-FROM auth.users
-WHERE email = 'admin@admin.com'
-ON CONFLICT (id) DO NOTHING;
+-- Xử lý cả hai trường hợp: bảng dùng cột "name" hoặc "full_name"
+DO $$
+DECLARE
+  v_user_id UUID;
+BEGIN
+  SELECT id INTO v_user_id FROM auth.users WHERE email = 'admin@admin.com';
+
+  IF v_user_id IS NULL THEN
+    RAISE NOTICE 'Admin user not found, skipping profile creation.';
+    RETURN;
+  END IF;
+
+  -- Thử với cột "full_name" trước (mẫu Supabase phổ biến)
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'full_name'
+  ) THEN
+    INSERT INTO public.profiles (id, full_name, avatar_url)
+    VALUES (v_user_id, 'Admin', NULL)
+    ON CONFLICT (id) DO NOTHING;
+
+  -- Nếu không có "full_name", thử với cột "name"
+  ELSIF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'name'
+  ) THEN
+    INSERT INTO public.profiles (id, name, avatar_url)
+    VALUES (v_user_id, 'Admin', NULL)
+    ON CONFLICT (id) DO NOTHING;
+
+  -- Nếu không có cả hai, chỉ insert id
+  ELSE
+    INSERT INTO public.profiles (id)
+    VALUES (v_user_id)
+    ON CONFLICT (id) DO NOTHING;
+  END IF;
+END $$;
 
 -- Xác nhận kết quả
 SELECT id, email, created_at
