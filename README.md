@@ -1,236 +1,240 @@
-# ProjectHub - Digital Projects Marketplace
+# 🛒 ProjectHub – Sàn Giao Dịch Dự Án Kỹ Thuật Số
 
-A beautiful, fully responsive marketplace application built with Next.js 16, React 19, and Supabase for discovering and purchasing premium digital projects, code templates, and components.
+**ProjectHub** là một ứng dụng marketplace hiện đại, cho phép người dùng khám phá, mua bán các dự án kỹ thuật số, code template và UI component. Được xây dựng bằng **Next.js 16, React 19, TypeScript, Tailwind CSS v4 và Supabase**.
 
-## Features
+---
 
-✨ **Modern Design**
-- Dark theme with elegant golden accents
-- Beautiful responsive grid layout
-- Smooth hover animations and transitions
-- Mobile-first design that works on all devices
+## ✨ Tính năng chính
 
-🔍 **Search & Discovery**
-- Real-time search by project name, description, or technology
-- Filter by category (Web App, Mobile, Backend, Component Library, etc.)
-- Sort by featured, latest, price (low to high, high to low)
-- Live search results with instant filtering
+### 🏪 Marketplace
+- Duyệt hàng nghìn dự án kỹ thuật số
+- Tìm kiếm real-time theo tên, mô tả hoặc công nghệ (có debounce)
+- Lọc theo danh mục: Web App, Mobile, Backend, Component Library, Other
+- Sắp xếp: Nổi bật, Mới nhất, Giá thấp → cao, Giá cao → thấp
 
-💼 **Project Showcase**
-- Detailed project cards with images, ratings, and reviews
-- Tech stack display for each project
-- Author information and pricing
-- Wishlist functionality for saved favorites
+### 🛍️ Giỏ hàng & Thanh toán
+- Thêm/xóa dự án khỏi giỏ hàng
+- Cập nhật số lượng, tính tổng tiền tự động
+- Lưu giỏ hàng vào `localStorage` (không mất khi tải lại trang)
+- Luồng thanh toán (Checkout)
 
-🗄️ **Database Integration**
-- Full Supabase integration for data persistence
-- Server-side rendering for optimal performance
-- Real-time project data fetching
-- Scalable architecture for future features
+### ❤️ Danh sách yêu thích (Wishlist)
+- Lưu dự án yêu thích (yêu cầu đăng nhập)
+- Toggle thêm/xóa với thông báo toast
+- Cập nhật UI tức thì (optimistic update)
 
-## Tech Stack
+### 📤 Đăng bán dự án
+- Form upload dự án: tên, mô tả, công nghệ, danh mục, giá, ảnh bìa
+- Validation phía server
+- Dự án được gắn với tài khoản người bán
 
-- **Frontend**: Next.js 16, React 19.2, TypeScript
-- **Styling**: Tailwind CSS v4, shadcn/ui components
-- **Database**: Supabase PostgreSQL
-- **Authentication**: Supabase Auth (pre-configured)
-- **Icons**: Lucide React
-- **Build**: Turbopack (stable in Next.js 16)
+### 👤 Xác thực người dùng
+- Đăng ký / Đăng nhập bằng email
+- Hỗ trợ OAuth (đăng nhập mạng xã hội)
+- Xác minh email sau đăng ký
+- Quản lý phiên đăng nhập với cookie
 
-## Getting Started
+### 📊 Dashboard người dùng
+- Xem danh sách dự án đã đăng bán
+- Thống kê cá nhân
 
-### Prerequisites
+### 🔐 Trang Admin
+- Truy cập tại `/admin` (yêu cầu email `@admin.com`)
+- Quản lý toàn bộ dự án và người dùng
 
-- Node.js 18+ or Bun
-- Supabase account
-- npm, pnpm, or yarn package manager
+### 🎨 Giao diện
+- Chủ đề tối (dark mode) với điểm nhấn màu vàng `#C4742D`
+- Responsive trên mọi thiết bị (mobile-first)
+- Animation mượt mà khi hover
+- Thông báo toast bằng Sonner
 
-### Installation
+---
 
-1. Clone or download the project
-2. Install dependencies:
-   ```bash
-   pnpm install
-   ```
+## 🛠️ Công nghệ sử dụng
 
-3. Set up environment variables in the Vercel project settings:
-   - `NEXT_PUBLIC_SUPABASE_URL` - Your Supabase project URL
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Your Supabase anonymous key
-   - `SUPABASE_SERVICE_ROLE_KEY` - Your service role key (for server-side operations)
+| Lớp | Công nghệ |
+|-----|-----------|
+| **Frontend** | Next.js 16 (App Router), React 19.2, TypeScript |
+| **Styling** | Tailwind CSS v4, shadcn/ui |
+| **Database** | Supabase PostgreSQL |
+| **Auth** | Supabase Auth |
+| **Icons** | Lucide React |
+| **Notifications** | Sonner |
+| **Analytics** | Vercel Analytics |
+| **Package Manager** | pnpm |
 
-4. Run the development server:
-   ```bash
-   pnpm dev
-   ```
+---
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser
-
-## Database Schema
-
-The application uses the following main tables:
-
-### users
-- `id` (UUID, Primary Key)
-- `name` (Text)
-- `email` (Text, Unique)
-- `created_at` (Timestamp)
-
-### projects
-- `id` (Integer, Primary Key)
-- `title` (Text) - Project name
-- `description` (Text) - Detailed description
-- `price` (Decimal) - Project price
-- `category` (Text) - Project category
-- `tech_stack` (Text) - Comma-separated technologies
-- `cover_image_url` (Text) - Project cover image URL
-- `author_id` (UUID, Foreign Key) - Reference to users table
-- `created_at` (Timestamp)
-- `updated_at` (Timestamp)
-
-### wishlist (future implementation)
-- `id` (Integer, Primary Key)
-- `user_id` (UUID, Foreign Key)
-- `project_id` (Integer, Foreign Key)
-- `created_at` (Timestamp)
-
-## Project Structure
+## 📁 Cấu trúc dự án
 
 ```
-/app
-  /api/projects          # API routes for project operations
-  /auth                  # Authentication pages (optional)
-  layout.tsx             # Root layout with metadata
-  page.tsx               # Home page (server component)
-  globals.css            # Global styles and theme tokens
-
-/components
-  header.tsx             # Navigation header
-  hero.tsx               # Hero banner section
-  project-card.tsx       # Individual project card component
-  filter-sidebar.tsx     # Filters sidebar (optional)
-  footer.tsx             # Footer with links
-  /ui                    # shadcn/ui components
-
-/lib/supabase
-  client.ts              # Client-side Supabase client
-  server.ts              # Server-side Supabase client
-  proxy.ts               # Session management proxy
-
-/scripts
-  seed-projects.sql      # Database seeding script
-
-middleware.ts            # Next.js middleware for auth
+selling-project/
+├── app/
+│   ├── actions/               # Server Actions
+│   ├── admin/                 # Trang quản trị (admin)
+│   ├── api/
+│   │   ├── projects/          # API CRUD dự án
+│   │   ├── store/             # API cửa hàng / đơn hàng
+│   │   └── wishlist/          # API toggle wishlist
+│   ├── auth/                  # Xử lý OAuth callback
+│   ├── cart/                  # Trang giỏ hàng
+│   ├── check-email/           # Thông báo xác minh email
+│   ├── checkout/              # Trang thanh toán
+│   ├── context/
+│   │   └── cart-provider.tsx  # Context quản lý giỏ hàng
+│   ├── dashboard/             # Dashboard người dùng
+│   ├── login/                 # Trang đăng nhập
+│   ├── projects/[id]/         # Chi tiết dự án
+│   ├── register/              # Trang đăng ký
+│   ├── store/                 # Trang cửa hàng
+│   ├── upload/                # Trang đăng bán dự án
+│   ├── layout.tsx             # Layout gốc (metadata, providers)
+│   ├── page.tsx               # Trang chủ marketplace
+│   └── globals.css            # Biến màu sắc toàn cục
+│
+├── components/
+│   ├── ui/                    # shadcn/ui components
+│   ├── store/                 # Components cho cửa hàng
+│   ├── header.tsx             # Header (server component)
+│   ├── header-client.tsx      # Header (client component, menu, auth)
+│   ├── hero.tsx               # Banner trang chủ
+│   ├── project-card.tsx       # Card hiển thị dự án
+│   ├── search-bar.tsx         # Ô tìm kiếm có debounce
+│   ├── sort-dropdown.tsx      # Dropdown sắp xếp
+│   ├── filter-sidebar.tsx     # Sidebar lọc danh mục
+│   └── footer.tsx             # Footer
+│
+├── lib/
+│   └── supabase/
+│       ├── client.ts          # Supabase client (browser)
+│       ├── server.ts          # Supabase client (server)
+│       └── proxy.ts           # Proxy quản lý session
+│
+├── hooks/                     # Custom React hooks
+├── scripts/                   # SQL scripts (schema, seed data)
+├── public/                    # Assets tĩnh
+├── middleware.ts              # Middleware xác thực
+└── next.config.mjs            # Cấu hình Next.js
 ```
 
-## Key Features Implemented
+---
 
-### Search Functionality
-Users can search across project titles, descriptions, and technologies in real-time. The search parameter is passed via URL query strings for better shareability.
+## 🗄️ Schema Database
 
-### Category Filtering
-Projects can be filtered by category, with a visual badge system for easy selection. Categories are defined in the database.
+### Bảng `projects`
+| Cột | Kiểu | Mô tả |
+|-----|------|-------|
+| `id` | Integer (PK) | ID dự án |
+| `title` | Text | Tên dự án |
+| `description` | Text | Mô tả chi tiết |
+| `price` | Decimal | Giá bán |
+| `category` | Text | Danh mục |
+| `tech_stack` | Text | Công nghệ (cách nhau bởi dấu phẩy) |
+| `cover_image_url` | Text | URL ảnh bìa |
+| `author_id` | UUID (FK) | ID người bán |
+| `created_at` | Timestamp | Ngày tạo |
+| `updated_at` | Timestamp | Ngày cập nhật |
 
-### Sorting Options
-Projects can be sorted by:
-- Featured (default)
-- Latest (most recently added)
-- Price: Low to High
-- Price: High to Low
+### Bảng `profiles`
+| Cột | Kiểu | Mô tả |
+|-----|------|-------|
+| `id` | UUID (PK) | ID người dùng |
+| `name` | Text | Tên hiển thị |
+| `avatar_url` | Text | URL ảnh đại diện |
 
-### Responsive Design
-- Mobile-first approach with breakpoints at sm, md, lg, xl
-- Touch-friendly button sizes and spacing
-- Hamburger menu on mobile devices
-- Optimized image sizes for different screen sizes
+### Bảng `wishlists`
+| Cột | Kiểu | Mô tả |
+|-----|------|-------|
+| `id` | Integer (PK) | ID bản ghi |
+| `user_id` | UUID (FK) | ID người dùng |
+| `project_id` | Integer (FK) | ID dự án |
+| `created_at` | Timestamp | Ngày thêm |
 
-## Database Seeding
+---
 
-The project includes seed scripts that populate the database with sample data.
+## 🚀 Hướng dẫn cài đặt
 
-Run these in the **Supabase SQL Editor** (Dashboard → SQL Editor → New Query):
+### Yêu cầu
+- Node.js 18+
+- pnpm (khuyến nghị) hoặc npm/yarn
+- Tài khoản [Supabase](https://supabase.com)
 
-1. **Initial schema & seed** – `scripts/schema.sql`
-2. **Additional projects** – `scripts/seed-more-projects.sql` (thêm dự án để đủ ID ~9–20)
+### Các bước cài đặt
 
-## Tạo tài khoản Admin
-
-Trang admin (`/admin`) yêu cầu tài khoản có email kết thúc bằng `@admin.com`.
-
-### Cách tạo tài khoản admin:
-
-Chạy script sau trong **Supabase SQL Editor**:
-
+**1. Clone dự án**
 ```bash
-# Mở: scripts/create-admin-user.sql
+git clone https://github.com/son-nguyen123/selling-project.git
+cd selling-project
 ```
 
-Script sẽ tạo tài khoản với thông tin:
+**2. Cài đặt dependencies**
+```bash
+pnpm install
+```
+
+**3. Cấu hình biến môi trường**
+
+Tạo file `.env.local` tại thư mục gốc:
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+```
+
+> Lấy các giá trị này tại: **Supabase Dashboard → Project Settings → API**
+
+**4. Khởi tạo database**
+
+Mở **Supabase SQL Editor** (Dashboard → SQL Editor → New Query) và chạy lần lượt:
+
+```
+scripts/schema.sql            -- Tạo bảng và cấu trúc
+scripts/seed-more-projects.sql -- Thêm dữ liệu mẫu
+```
+
+**5. Chạy ứng dụng**
+```bash
+pnpm dev
+```
+
+Mở trình duyệt tại [http://localhost:3000](http://localhost:3000)
+
+---
+
+## 🔐 Tài khoản Admin
+
+Trang quản trị (`/admin`) yêu cầu email kết thúc bằng `@admin.com`.
+
+**Tạo tài khoản admin** bằng cách chạy `scripts/create-admin-user.sql` trong Supabase SQL Editor.
+
+Thông tin đăng nhập mặc định:
 - **Email**: `admin@admin.com`
-- **Password**: `Admin@Password123!`
+- **Mật khẩu**: `Admin@Password123!`
 
 > ⚠️ Hãy đổi mật khẩu sau khi đăng nhập lần đầu.
 
-Sau khi chạy script, đăng nhập tại `/login` với thông tin trên để truy cập `/admin`.
+---
 
-## Environment Variables
+## 🌐 Deploy lên Vercel
 
-Create a `.env.local` file (for local development) with:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-```
-
-These are automatically configured if you use the Vercel integration.
-
-## Styling
-
-The application uses Tailwind CSS v4 with a custom design token system defined in `globals.css`. The theme supports both light and dark modes with carefully chosen colors:
-
-- **Primary**: Deep black (#1a1a1a)
-- **Accent**: Warm gold (#C4742D)
-- **Neutrals**: Various shades of gray
-- **Background**: Light gray (#fafaf8) or dark (#191919)
-
-## Future Enhancements
-
-- User authentication and profiles
-- Shopping cart and checkout integration
-- Payment processing with Stripe
-- Wishlist persistence to database
-- User reviews and ratings
-- Project upload and management system
-- Admin dashboard for moderation
-- Notification system
-- Real-time notifications with Supabase subscriptions
-
-## Performance Optimizations
-
-- Server-side rendering for SEO
-- Image optimization with Next.js Image component
-- Efficient database queries
-- Caching strategies with Supabase
-- Minimal JavaScript with server components
-
-## Deployment
-
-Deploy to Vercel with a single click:
-
-1. Push your code to GitHub
-2. Connect your GitHub repository in Vercel
-3. Add environment variables in Vercel Settings
+1. Push code lên GitHub
+2. Kết nối repository tại [vercel.com](https://vercel.com)
+3. Thêm các biến môi trường trong **Vercel → Settings → Environment Variables**
 4. Deploy!
 
-The application will automatically scale and handle traffic efficiently on Vercel's infrastructure.
+Ứng dụng sẽ tự động scale và chạy trên hạ tầng Vercel.
 
-## Support
+---
 
-For issues or questions:
-1. Check the [Supabase documentation](https://supabase.com/docs)
-2. Review [Next.js 16 documentation](https://nextjs.org/docs)
-3. Check [shadcn/ui component docs](https://ui.shadcn.com/)
+## 📚 Tài liệu tham khảo
 
-## License
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Supabase Documentation](https://supabase.com/docs)
+- [shadcn/ui Components](https://ui.shadcn.com/)
+- [Tailwind CSS v4](https://tailwindcss.com/docs)
 
-This project is open source and available for personal and commercial use.
+---
+
+## 📄 License
+
+Dự án mã nguồn mở, có thể sử dụng cho mục đích cá nhân và thương mại.
