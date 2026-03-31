@@ -107,6 +107,20 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Ensure a profile row exists for this user before inserting the project.
+    // The profiles table is the target of the projects_author_id_fkey foreign
+    // key, so the row must be present or the insert will be rejected.
+    // auth.getUser() guarantees the user exists in auth.users, so this upsert
+    // is always safe.
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .upsert({ id: user.id }, { onConflict: 'id', ignoreDuplicates: true })
+
+    if (profileError) {
+      console.error('POST /api/projects – profile upsert error:', profileError)
+      return NextResponse.json({ error: 'Failed to ensure user profile' }, { status: 500 })
+    }
+
     const { data, error } = await supabase
       .from('projects')
       .insert([
