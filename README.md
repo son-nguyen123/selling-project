@@ -145,13 +145,32 @@ Projects can be sorted by:
 
 ## Database Seeding
 
-The project includes a seed script that populates the database with sample data:
+The project includes seed scripts that populate the database with sample data.
+
+Run these in the **Supabase SQL Editor** (Dashboard → SQL Editor → New Query):
+
+1. **Initial schema & seed** – `scripts/schema.sql`
+2. **Additional projects** – `scripts/seed-more-projects.sql` (thêm dự án để đủ ID ~9–20)
+
+## Tạo tài khoản Admin
+
+Trang admin (`/admin`) yêu cầu tài khoản có email kết thúc bằng `@admin.com`.
+
+### Cách tạo tài khoản admin:
+
+Chạy script sau trong **Supabase SQL Editor**:
 
 ```bash
-pnpm exec supabase db push scripts/seed-projects.sql
+# Mở: scripts/create-admin-user.sql
 ```
 
-This creates sample users and projects for testing and demonstration.
+Script sẽ tạo tài khoản với thông tin:
+- **Email**: `admin@admin.com`
+- **Password**: `Admin@Password123!`
+
+> ⚠️ Hãy đổi mật khẩu sau khi đăng nhập lần đầu.
+
+Sau khi chạy script, đăng nhập tại `/login` với thông tin trên để truy cập `/admin`.
 
 ## Environment Variables
 
