@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const PROTECTED_PATHS = ['/dashboard', '/upload']
+const PROTECTED_PATHS = ['/dashboard', '/upload', '/admin', '/checkout']
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -51,6 +51,16 @@ export async function updateSession(request: NextRequest) {
     url.pathname = '/login'
     url.searchParams.set('redirectedFrom', pathname)
     return NextResponse.redirect(url)
+  }
+
+  // Redirect non-admins away from /admin
+  if (user && pathname.startsWith('/admin')) {
+    const email = user.email ?? ''
+    if (!email.endsWith('@admin.com')) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/'
+      return NextResponse.redirect(url)
+    }
   }
 
   // Redirect authenticated users away from the login page
