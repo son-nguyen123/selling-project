@@ -2,12 +2,36 @@
 
 import Image from 'next/image'
 import { useState } from 'react'
-import { ShoppingCart, Zap, Star, Minus, Plus, Shield, RotateCcw, CheckCircle2 } from 'lucide-react'
+import { ShoppingCart, Zap, Star, Minus, Plus, Shield, RotateCcw, CheckCircle2, Play } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useCart } from '@/app/context/cart-provider'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+
+function getVideoInfo(url: string): { isYoutube: boolean; embedUrl: string; thumbnailUrl?: string } {
+  try {
+    const parsed = new URL(url)
+    const ytId = parsed.searchParams.get('v')
+    if (parsed.hostname.includes('youtube.com') && ytId) {
+      const id = ytId
+      return {
+        isYoutube: true,
+        embedUrl: `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`,
+        thumbnailUrl: `https://img.youtube.com/vi/${id}/mqdefault.jpg`,
+      }
+    }
+    if (parsed.hostname === 'youtu.be') {
+      const id = parsed.pathname.slice(1)
+      return {
+        isYoutube: true,
+        embedUrl: `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`,
+        thumbnailUrl: `https://img.youtube.com/vi/${id}/mqdefault.jpg`,
+      }
+    }
+  } catch { /* invalid url – fall through */ }
+  return { isYoutube: false, embedUrl: url }
+}
 
 interface StoreProduct {
   id: string
@@ -101,18 +125,9 @@ export function ProductDetail({ product, reviews, currentUserId }: ProductDetail
   const { addToCart } = useCart()
   const router = useRouter()
 
-  // Fix: use dashboard_image_url as fallback when single_image_url and gallery_urls are absent
-  const [activeImage, setActiveImage] = useState<string | null>(
-    product.single_image_url ??
-      product.dashboard_image_url ??
-      (product.gallery_urls?.[0] ?? null),
-  )
-  const [quantity, setQuantity] = useState(1)
-  const [reviewRating, setReviewRating] = useState(5)
-  const [reviewComment, setReviewComment] = useState('')
-  const [submittingReview, setSubmittingReview] = useState(false)
+  const hasVideo = !!product.demo_video_url
+  const videoInfo = hasVideo ? getVideoInfo(product.demo_video_url!) : null
 
-  // Fix: include dashboard_image_url as fallback in the gallery list
   const allImages = [
     ...(product.single_image_url
       ? [product.single_image_url]
@@ -121,6 +136,19 @@ export function ProductDetail({ product, reviews, currentUserId }: ProductDetail
         : []),
     ...(product.gallery_urls ?? []),
   ]
+
+  // '__video__' sentinel means "show the video player"
+  const [activeMedia, setActiveMedia] = useState<string | '__video__'>(
+    hasVideo
+      ? '__video__'
+      : (allImages[0] ?? ''),
+  )
+  const [quantity, setQuantity] = useState(1)
+  const [reviewRating, setReviewRating] = useState(5)
+  const [reviewComment, setReviewComment] = useState('')
+  const [submittingReview, setSubmittingReview] = useState(false)
+
+  const showThumbnails = (hasVideo && allImages.length > 0) || allImages.length > 1
 
   function handleAddToCart() {
     addToCart({
@@ -191,20 +219,30 @@ export function ProductDetail({ product, reviews, currentUserId }: ProductDetail
           {/* ── Left: image gallery ── */}
           <div className="border-b border-border p-5 lg:border-b-0 lg:border-r">
             {/* Main media */}
-            <div className="relative aspect-square overflow-hidden rounded-xl border border-border bg-muted">
-              {product.demo_video_url ? (
-                <video
-                  src={product.demo_video_url}
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  controls
-                  className="h-full w-full object-cover"
-                />
-              ) : activeImage ? (
+            <div className={`relative overflow-hidden rounded-xl border border-border bg-muted ${hasVideo ? 'aspect-video' : 'aspect-square'}`}>
+              {hasVideo && activeMedia === '__video__' ? (
+                videoInfo?.isYoutube ? (
+                  <iframe
+                    src={videoInfo.embedUrl}
+                    className="h-full w-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    title={`Demo: ${product.name}`}
+                  />
+                ) : (
+                  <video
+                    src={product.demo_video_url!}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    controls
+                    className="h-full w-full object-cover"
+                  />
+                )
+              ) : activeMedia && activeMedia !== '__video__' ? (
                 <Image
-                  src={activeImage}
+                  src={activeMedia}
                   alt={product.name}
                   fill
                   className="object-contain p-2 transition-transform duration-300 motion-safe:hover:scale-105"
@@ -219,14 +257,42 @@ export function ProductDetail({ product, reviews, currentUserId }: ProductDetail
             </div>
 
             {/* Thumbnails */}
-            {allImages.length > 1 && (
+            {showThumbnails && (
               <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                {/* Video thumbnail */}
+                {hasVideo && (
+                  <button
+                    key="__video__"
+                    onClick={() => setActiveMedia('__video__')}
+                    className={`relative h-16 w-24 shrink-0 overflow-hidden rounded-lg border-2 transition-all duration-200 ${
+                      activeMedia === '__video__'
+                        ? 'border-primary shadow-sm shadow-primary/30'
+                        : 'border-transparent opacity-60 hover:border-border hover:opacity-100'
+                    }`}
+                    title="Xem video"
+                  >
+                    {videoInfo?.thumbnailUrl ? (
+                      <Image src={videoInfo.thumbnailUrl} alt="Video demo" fill className="object-cover" />
+                    ) : (
+                      <div className="flex h-full items-center justify-center bg-black/80">
+                        <Play className="h-6 w-6 text-white" />
+                      </div>
+                    )}
+                    {/* Play icon overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/25">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 shadow">
+                        <Play className="h-3.5 w-3.5 fill-gray-800 text-gray-800" />
+                      </div>
+                    </div>
+                  </button>
+                )}
+                {/* Image thumbnails */}
                 {allImages.map((url, idx) => (
                   <button
                     key={idx}
-                    onClick={() => setActiveImage(url)}
+                    onClick={() => setActiveMedia(url)}
                     className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 transition-all duration-200 ${
-                      activeImage === url
+                      activeMedia === url
                         ? 'border-primary shadow-sm shadow-primary/30'
                         : 'border-transparent opacity-60 hover:border-border hover:opacity-100'
                     }`}
