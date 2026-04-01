@@ -5,7 +5,7 @@ import CartButton from '@/components/store/cart-button'
 import Link from 'next/link'
 import { Search } from 'lucide-react'
 
-const CATEGORIES = ['All', 'Electronics', 'Clothing', 'Books', 'Food', 'Other']
+const CATEGORIES = ['All', 'Web App', 'Mobile', 'Backend', 'Component Library', 'Other']
 
 interface SearchParams {
   search?: string
