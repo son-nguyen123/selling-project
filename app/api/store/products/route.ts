@@ -46,6 +46,8 @@ export async function POST(request: NextRequest) {
   }
 
   // Create product (admin only)
+  const { data: { user: adminUser } } = await supabase.auth.getUser()
+  console.log("USER:", adminUser)
   if (!(await isAdmin(supabase))) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
