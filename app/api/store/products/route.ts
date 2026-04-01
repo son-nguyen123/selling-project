@@ -1,3 +1,4 @@
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -46,12 +47,16 @@ export async function POST(request: NextRequest) {
   }
 
   // Create product (admin only)
+  const { data: { user } } = await supabase.auth.getUser()
+  console.log("USER:", user)
+
   if (!(await isAdmin(supabase))) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
+  const adminClient = createAdminClient()
   const { _action, ...productData } = body
-  const { data, error } = await supabase
+  const { data, error } = await adminClient
     .from('store_products')
     .insert(productData)
     .select()
