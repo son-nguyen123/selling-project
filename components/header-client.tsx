@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { User, Menu, X, LayoutDashboard, LogOut, LogIn, Search, ShoppingCart } from 'lucide-react'
+import { User, Menu, X, LayoutDashboard, LogOut, LogIn, Search, ShoppingCart, Tag } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import {
@@ -116,6 +116,12 @@ export default function HeaderClient({ user, isAdmin = false }: HeaderClientProp
 
         {/* Right actions */}
         <div className="flex items-center gap-4 shrink-0 ml-auto md:ml-0">
+          {/* Sell link */}
+          <Link href="/sell" className="hidden md:flex flex-col items-center gap-0.5 text-foreground hover:text-accent transition">
+            <Tag className="h-5 w-5" />
+            <span className="text-xs">Đăng bán</span>
+          </Link>
+
           {/* Cart icon placeholder */}
           <Link href="/" className="hidden md:flex flex-col items-center gap-0.5 text-foreground hover:text-accent transition">
             <ShoppingCart className="h-5 w-5" />
@@ -182,11 +188,11 @@ export default function HeaderClient({ user, isAdmin = false }: HeaderClientProp
       <div className="hidden md:block border-t border-border/50">
         <div className="max-w-7xl mx-auto px-4 py-1 flex items-center gap-6">
           <Link href="/" className="text-xs text-muted-foreground hover:text-accent transition py-1">Trang chủ</Link>
-          <Link href={`/?category=${encodeURIComponent('Web App')}`} className="text-xs text-muted-foreground hover:text-accent transition py-1">Web App</Link>
-          <Link href={`/?category=${encodeURIComponent('Mobile')}`} className="text-xs text-muted-foreground hover:text-accent transition py-1">Mobile</Link>
-          <Link href={`/?category=${encodeURIComponent('Backend')}`} className="text-xs text-muted-foreground hover:text-accent transition py-1">Backend</Link>
-          <Link href={`/?category=${encodeURIComponent('Component Library')}`} className="text-xs text-muted-foreground hover:text-accent transition py-1">Component Library</Link>
-          <Link href={`/?category=${encodeURIComponent('Other')}`} className="text-xs text-muted-foreground hover:text-accent transition py-1">Khác</Link>
+          <Link href={`/?category=${encodeURIComponent('Source code')}`} className="text-xs text-muted-foreground hover:text-accent transition py-1">Source code</Link>
+          <Link href={`/?category=${encodeURIComponent('Website')}`} className="text-xs text-muted-foreground hover:text-accent transition py-1">Website</Link>
+          <Link href={`/?category=${encodeURIComponent('Phần mềm')}`} className="text-xs text-muted-foreground hover:text-accent transition py-1">Phần mềm</Link>
+          <Link href={`/?category=${encodeURIComponent('Ứng dụng')}`} className="text-xs text-muted-foreground hover:text-accent transition py-1">Ứng dụng</Link>
+          <Link href={`/?category=${encodeURIComponent('Dịch vụ máy chủ')}`} className="text-xs text-muted-foreground hover:text-accent transition py-1">Dịch vụ máy chủ</Link>
           {user && (
             <Link href="/dashboard" className="text-xs text-muted-foreground hover:text-accent transition py-1 ml-auto">Dashboard</Link>
           )}
@@ -211,6 +217,13 @@ export default function HeaderClient({ user, isAdmin = false }: HeaderClientProp
             </Link>
             {user ? (
               <>
+                <Link
+                  href="/sell"
+                  className="text-foreground hover:text-accent transition font-medium py-2"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Đăng bán
+                </Link>
                 <Link
                   href="/dashboard"
                   className="text-foreground hover:text-accent transition font-medium py-2"
