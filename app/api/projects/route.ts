@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
@@ -149,6 +150,27 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    // Sync to store_products so that the project appears in the store catalog.
+    try {
+      const adminClient = createAdminClient()
+      const project = data[0]
+      const { error: syncError } = await adminClient.from('store_products').insert([
+        {
+          name: project.title,
+          price: project.price,
+          description: project.description ?? null,
+          category: project.category ?? null,
+          dashboard_image_url: project.cover_image_url ?? null,
+          specs: { project_id: project.id },
+        },
+      ])
+      if (syncError) {
+        console.error('POST /api/projects – store_products sync error:', syncError)
+      }
+    } catch (syncErr) {
+      console.error('POST /api/projects – store_products sync error:', syncErr)
     }
 
     return NextResponse.json(data, { status: 201 })
