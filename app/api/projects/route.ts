@@ -153,19 +153,25 @@ export async function POST(request: NextRequest) {
     }
 
     // Sync to store_products so that the project appears in the store catalog.
+    // Try admin client first (bypasses RLS); fall back to the user's authenticated
+    // client so that the admin-email RLS policy can still permit the insert.
+    const project = data[0]
+    const syncPayload = {
+      name: project.title,
+      price: project.price,
+      description: project.description ?? null,
+      category: project.category ?? null,
+      dashboard_image_url: project.cover_image_url ?? null,
+      specs: { project_id: project.id },
+    }
     try {
-      const adminClient = createAdminClient()
-      const project = data[0]
-      const { error: syncError } = await adminClient.from('store_products').insert([
-        {
-          name: project.title,
-          price: project.price,
-          description: project.description ?? null,
-          category: project.category ?? null,
-          dashboard_image_url: project.cover_image_url ?? null,
-          specs: { project_id: project.id },
-        },
-      ])
+      let syncClient: ReturnType<typeof createAdminClient> | Awaited<ReturnType<typeof createClient>>
+      try {
+        syncClient = createAdminClient()
+      } catch {
+        syncClient = supabase
+      }
+      const { error: syncError } = await syncClient.from('store_products').insert([syncPayload])
       if (syncError) {
         console.error('POST /api/projects – store_products sync error:', syncError)
       }

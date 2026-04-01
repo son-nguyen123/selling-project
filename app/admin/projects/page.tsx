@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import AdminProjectActions from './project-actions'
+import SyncProjectsButton from './sync-button'
 
 const PAGE_SIZE = 20
 
@@ -28,13 +29,16 @@ export default async function AdminProjectsPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-white">Quản lý dự án</h1>
-        <Link
-          href="/admin/projects/new"
-          className="flex items-center gap-1.5 rounded-md bg-accent hover:bg-accent/90 text-white text-xs font-medium px-3 py-2 transition-colors"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Thêm dự án mới
-        </Link>
+        <div className="flex items-center gap-2">
+          <SyncProjectsButton />
+          <Link
+            href="/admin/projects/new"
+            className="flex items-center gap-1.5 rounded-md bg-accent hover:bg-accent/90 text-white text-xs font-medium px-3 py-2 transition-colors"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Thêm dự án mới
+          </Link>
+        </div>
       </div>
 
       <div className="rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden">
