@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { useState } from 'react'
-import { ShoppingCart, Zap, Star } from 'lucide-react'
+import { ShoppingCart, Zap, Star, Minus, Plus, Shield, RotateCcw, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useCart } from '@/app/context/cart-provider'
@@ -62,7 +62,7 @@ function InteractiveStars({
 }) {
   const [hovered, setHovered] = useState(0)
   return (
-    <div className="flex items-center gap-0.5">
+    <div className="flex items-center gap-1">
       {[1, 2, 3, 4, 5].map((s) => (
         <button
           key={s}
@@ -73,7 +73,7 @@ function InteractiveStars({
           className="focus:outline-none"
         >
           <Star
-            className={`h-6 w-6 ${
+            className={`h-7 w-7 transition-colors ${
               s <= (hovered || value) ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'
             }`}
           />
@@ -83,18 +83,42 @@ function InteractiveStars({
   )
 }
 
+function RatingBar({ star, count, total }: { star: number; count: number; total: number }) {
+  const pct = total > 0 ? Math.round((count / total) * 100) : 0
+  return (
+    <div className="flex items-center gap-2 text-xs">
+      <span className="w-6 text-right text-muted-foreground">{star}</span>
+      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+      <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+        <div className="h-full rounded-full bg-yellow-400 transition-all" style={{ width: `${pct}%` }} />
+      </div>
+      <span className="w-6 text-muted-foreground">{count}</span>
+    </div>
+  )
+}
+
 export function ProductDetail({ product, reviews, currentUserId }: ProductDetailProps) {
   const { addToCart } = useCart()
   const router = useRouter()
+
+  // Fix: use dashboard_image_url as fallback when single_image_url and gallery_urls are absent
   const [activeImage, setActiveImage] = useState<string | null>(
-    product.single_image_url ?? (product.gallery_urls?.[0] ?? null),
+    product.single_image_url ??
+      product.dashboard_image_url ??
+      (product.gallery_urls?.[0] ?? null),
   )
+  const [quantity, setQuantity] = useState(1)
   const [reviewRating, setReviewRating] = useState(5)
   const [reviewComment, setReviewComment] = useState('')
   const [submittingReview, setSubmittingReview] = useState(false)
 
+  // Fix: include dashboard_image_url as fallback in the gallery list
   const allImages = [
-    ...(product.single_image_url ? [product.single_image_url] : []),
+    ...(product.single_image_url
+      ? [product.single_image_url]
+      : product.dashboard_image_url
+        ? [product.dashboard_image_url]
+        : []),
     ...(product.gallery_urls ?? []),
   ]
 
@@ -105,7 +129,7 @@ export function ProductDetail({ product, reviews, currentUserId }: ProductDetail
       price: product.price,
       image_url: product.dashboard_image_url ?? product.single_image_url ?? undefined,
     })
-    toast.success(`${product.name} added to cart`)
+    toast.success(`Đã thêm ${product.name} vào giỏ hàng`)
   }
 
   function handleBuyNow() {
@@ -121,7 +145,7 @@ export function ProductDetail({ product, reviews, currentUserId }: ProductDetail
   async function handleReviewSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!currentUserId) {
-      toast.error('You must be logged in to leave a review')
+      toast.error('Bạn cần đăng nhập để đánh giá sản phẩm')
       return
     }
     setSubmittingReview(true)
@@ -137,12 +161,12 @@ export function ProductDetail({ product, reviews, currentUserId }: ProductDetail
         }),
       })
       if (!res.ok) throw new Error('Failed to submit review')
-      toast.success('Review submitted!')
+      toast.success('Đã gửi đánh giá thành công!')
       setReviewComment('')
       setReviewRating(5)
       router.refresh()
     } catch {
-      toast.error('Failed to submit review')
+      toast.error('Gửi đánh giá thất bại, vui lòng thử lại')
     } finally {
       setSubmittingReview(false)
     }
@@ -150,211 +174,290 @@ export function ProductDetail({ product, reviews, currentUserId }: ProductDetail
 
   const avgRating =
     reviews.length > 0
-      ? Math.round(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length)
+      ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
       : 0
+  const avgRatingRounded = Math.round(avgRating)
+
+  const ratingCounts = [5, 4, 3, 2, 1].map((star) => ({
+    star,
+    count: reviews.filter((r) => r.rating === star).length,
+  }))
 
   return (
-    <div className="space-y-10">
-      {/* Hero */}
-      <div className="grid gap-8 lg:grid-cols-2">
-        <div className="space-y-4">
-          {/* Main media */}
-          <div className="relative aspect-video overflow-hidden rounded-2xl border border-border bg-muted shadow-md">
-            {product.demo_video_url ? (
-              <video
-                src={product.demo_video_url}
-                autoPlay
-                muted
-                loop
-                playsInline
-                controls
-                className="h-full w-full object-cover"
-              />
-            ) : activeImage ? (
-              <Image
-                src={activeImage}
-                alt={product.name}
-                fill
-                className="object-cover"
-                priority
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center text-muted-foreground">
-                <ShoppingCart className="h-16 w-16 opacity-20" />
+    <div className="space-y-4">
+      {/* ── Main product card ── */}
+      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+        <div className="grid gap-0 lg:grid-cols-2">
+          {/* ── Left: image gallery ── */}
+          <div className="border-b border-border p-5 lg:border-b-0 lg:border-r">
+            {/* Main media */}
+            <div className="relative aspect-square overflow-hidden rounded-xl border border-border bg-muted">
+              {product.demo_video_url ? (
+                <video
+                  src={product.demo_video_url}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  controls
+                  className="h-full w-full object-cover"
+                />
+              ) : activeImage ? (
+                <Image
+                  src={activeImage}
+                  alt={product.name}
+                  fill
+                  className="object-contain p-2 transition-transform duration-300 motion-safe:hover:scale-105"
+                  priority
+                />
+              ) : (
+                <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground">
+                  <ShoppingCart className="h-20 w-20 opacity-10" />
+                  <p className="text-xs opacity-50">Chưa có hình ảnh</p>
+                </div>
+              )}
+            </div>
+
+            {/* Thumbnails */}
+            {allImages.length > 1 && (
+              <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                {allImages.map((url, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveImage(url)}
+                    className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 transition-all duration-200 ${
+                      activeImage === url
+                        ? 'border-primary shadow-sm shadow-primary/30'
+                        : 'border-transparent opacity-60 hover:border-border hover:opacity-100'
+                    }`}
+                  >
+                    <Image src={url} alt={`Ảnh ${idx + 1}`} fill className="object-cover" />
+                  </button>
+                ))}
               </div>
             )}
           </div>
 
-          {/* Gallery thumbnails */}
-          {allImages.length > 1 && (
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {allImages.map((url, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setActiveImage(url)}
-                  className={`relative h-16 w-24 shrink-0 overflow-hidden rounded-xl border-2 transition-all duration-200 ${
-                    activeImage === url
-                      ? 'border-primary shadow-md shadow-primary/20'
-                      : 'border-transparent hover:border-border'
-                  }`}
-                >
-                  <Image src={url} alt={`Gallery ${idx + 1}`} fill className="object-cover" />
-                </button>
-              ))}
+          {/* ── Right: product info ── */}
+          <div className="flex flex-col gap-4 p-5">
+            {/* Category + stock badges */}
+            <div className="flex flex-wrap items-center gap-2">
+              {product.category && (
+                <Badge variant="secondary" className="rounded-full px-3 py-0.5 text-xs font-medium">
+                  {product.category}
+                </Badge>
+              )}
+              {product.stock > 0 ? (
+                <Badge className="rounded-full bg-green-600 px-3 py-0.5 text-xs font-medium hover:bg-green-700">
+                  Còn hàng
+                </Badge>
+              ) : (
+                <Badge variant="destructive" className="rounded-full px-3 py-0.5 text-xs font-medium">
+                  Hết hàng
+                </Badge>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* Product info */}
-        <div className="flex flex-col gap-5">
-          {/* Badges */}
-          <div className="flex flex-wrap items-center gap-2">
-            {product.category && (
-              <Badge variant="secondary" className="rounded-full px-3 py-1 text-xs font-medium">
-                {product.category}
-              </Badge>
-            )}
-            <Badge
-              variant={product.stock > 0 ? 'default' : 'destructive'}
-              className={`rounded-full px-3 py-1 text-xs font-medium ${
-                product.stock > 0 ? 'bg-green-600 hover:bg-green-700' : ''
-              }`}
-            >
-              {product.stock > 0 ? `Còn ${product.stock} sản phẩm` : 'Hết hàng'}
-            </Badge>
-          </div>
+            {/* Name */}
+            <h1 className="text-2xl font-bold leading-snug text-foreground">{product.name}</h1>
 
-          {/* Name */}
-          <h1 className="text-3xl font-bold leading-tight text-foreground">{product.name}</h1>
-
-          {/* Rating */}
-          {reviews.length > 0 && (
-            <div className="flex items-center gap-2">
-              <StarRating rating={avgRating} />
+            {/* Rating row */}
+            <div className="flex items-center gap-3 border-b border-border pb-4">
+              <span className="text-base font-semibold text-yellow-400 underline decoration-yellow-400/50 underline-offset-2">
+                {avgRating > 0 ? avgRating.toFixed(1) : '—'}
+              </span>
+              <StarRating rating={avgRatingRounded} />
               <span className="text-sm text-muted-foreground">
-                ({reviews.length} review{reviews.length !== 1 ? 's' : ''})
+                {reviews.length} đánh giá
               </span>
             </div>
-          )}
 
-          {/* Price bar */}
-          <div className="flex items-center justify-between rounded-2xl border border-border bg-gradient-to-r from-primary/5 to-primary/10 px-5 py-4 shadow-sm">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-                Giá bán
-              </p>
-              <p className="mt-0.5 text-4xl font-extrabold text-primary">
+            {/* Price section */}
+            <div className="flex items-baseline gap-2 rounded-xl bg-primary/5 px-4 py-3">
+              <span className="text-3xl font-extrabold text-primary">
                 {product.price.toLocaleString('vi-VN')}₫
-              </p>
-            </div>
-            {product.stock > 0 && (
-              <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-400">
-                Còn hàng
               </span>
-            )}
-          </div>
-
-          {/* Description */}
-          {product.description && (
-            <p className="text-sm leading-relaxed text-muted-foreground">{product.description}</p>
-          )}
-
-          {/* Action buttons */}
-          <div className="flex gap-3 pt-1">
-            <Button
-              size="lg"
-              variant="outline"
-              className="flex-1 rounded-xl border-primary/30 py-6 text-base font-semibold hover:border-primary hover:bg-primary/5 hover:text-primary disabled:opacity-50"
-              onClick={handleAddToCart}
-              disabled={product.stock === 0}
-            >
-              <ShoppingCart className="mr-2 h-5 w-5" />
-              Thêm vào giỏ
-            </Button>
-            <Button
-              size="lg"
-              className="flex-1 rounded-xl py-6 text-base font-semibold shadow-md hover:shadow-lg disabled:opacity-50"
-              onClick={handleBuyNow}
-              disabled={product.stock === 0}
-            >
-              <Zap className="mr-2 h-5 w-5" />
-              Mua ngay
-            </Button>
-          </div>
-
-          {/* Specs */}
-          {product.specs && Object.keys(product.specs).length > 0 && (
-            <div className="mt-2 rounded-xl border border-border p-4">
-              <h3 className="mb-3 text-sm font-semibold text-foreground">Thông số kỹ thuật</h3>
-              <table className="w-full text-sm">
-                <tbody>
-                  {Object.entries(product.specs).map(([key, val]) => (
-                    <tr key={key} className="border-b border-border/50 last:border-0">
-                      <td className="py-2 pr-4 font-medium text-muted-foreground">{key}</td>
-                      <td className="py-2 text-foreground">{val}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
-          )}
+
+            {/* Guarantee badges */}
+            <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <Shield className="h-3.5 w-3.5 text-green-500" />
+                Hàng chính hãng
+              </span>
+              <span className="flex items-center gap-1">
+                <RotateCcw className="h-3.5 w-3.5 text-blue-500" />
+                Đổi trả 7 ngày
+              </span>
+              <span className="flex items-center gap-1">
+                <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+                Hỗ trợ 24/7
+              </span>
+            </div>
+
+            {/* Quantity selector */}
+            {product.stock > 0 && (
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-muted-foreground">Số lượng</span>
+                <div className="flex items-center rounded-lg border border-border">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                    className="flex h-9 w-9 items-center justify-center rounded-l-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40"
+                    disabled={quantity <= 1}
+                  >
+                    <Minus className="h-3.5 w-3.5" />
+                  </button>
+                  <span className="flex h-9 w-12 items-center justify-center border-x border-border text-sm font-medium text-foreground">
+                    {quantity}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))}
+                    className="flex h-9 w-9 items-center justify-center rounded-r-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-40"
+                    disabled={quantity >= product.stock}
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                <span className="text-xs text-muted-foreground">{product.stock} sản phẩm có sẵn</span>
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div className="flex gap-3 pt-1">
+              <Button
+                size="lg"
+                variant="outline"
+                className="flex-1 rounded-xl border-primary/40 py-6 text-sm font-semibold hover:border-primary hover:bg-primary/5 hover:text-primary disabled:opacity-50"
+                onClick={handleAddToCart}
+                disabled={product.stock === 0}
+              >
+                <ShoppingCart className="mr-2 h-4 w-4" />
+                Thêm vào giỏ
+              </Button>
+              <Button
+                size="lg"
+                className="flex-1 rounded-xl py-6 text-sm font-semibold shadow-md hover:shadow-lg disabled:opacity-50"
+                onClick={handleBuyNow}
+                disabled={product.stock === 0}
+              >
+                <Zap className="mr-2 h-4 w-4" />
+                Mua ngay
+              </Button>
+            </div>
+          </div>
         </div>
+
+        {/* Specs table (full-width below the grid) */}
+        {product.specs && Object.keys(product.specs).length > 0 && (
+          <div className="border-t border-border px-5 py-4">
+            <h3 className="mb-3 text-sm font-semibold text-foreground">Thông số kỹ thuật</h3>
+            <table className="w-full text-sm">
+              <tbody>
+                {Object.entries(product.specs).map(([key, val], i) => (
+                  <tr
+                    key={key}
+                    className={`${i % 2 === 0 ? 'bg-muted/30' : ''} rounded`}
+                  >
+                    <td className="w-1/3 py-2 pl-2 pr-4 font-medium text-muted-foreground">{key}</td>
+                    <td className="py-2 pr-2 text-foreground">{val}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
-      {/* Reviews */}
-      <div>
-        <h2 className="mb-6 text-xl font-bold text-foreground">
-          Reviews ({reviews.length})
+      {/* ── Description card ── */}
+      {product.description && (
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <h2 className="mb-3 text-base font-bold text-foreground">Mô tả sản phẩm</h2>
+          <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+            {product.description}
+          </p>
+        </div>
+      )}
+
+      {/* ── Reviews card ── */}
+      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <h2 className="mb-4 text-base font-bold text-foreground">
+          Đánh giá sản phẩm
         </h2>
 
         {reviews.length > 0 ? (
-          <div className="space-y-4">
-            {reviews.map((review) => (
-              <div key={review.id} className="rounded-lg border border-border bg-card p-4">
-                <div className="mb-2 flex items-center justify-between">
-                  <StarRating rating={review.rating} />
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(review.created_at).toLocaleDateString()}
-                  </span>
-                </div>
-                {review.comment && (
-                  <p className="text-sm text-muted-foreground">{review.comment}</p>
-                )}
+          <>
+            {/* Rating summary */}
+            <div className="mb-6 flex flex-col items-center gap-6 rounded-xl border border-border bg-muted/30 p-5 sm:flex-row">
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-5xl font-extrabold text-yellow-400">
+                  {avgRating.toFixed(1)}
+                </span>
+                <StarRating rating={avgRatingRounded} size="lg" />
+                <span className="mt-1 text-xs text-muted-foreground">{reviews.length} đánh giá</span>
               </div>
-            ))}
-          </div>
+              <div className="flex flex-1 flex-col gap-1.5">
+                {ratingCounts.map(({ star, count }) => (
+                  <RatingBar key={star} star={star} count={count} total={reviews.length} />
+                ))}
+              </div>
+            </div>
+
+            {/* Review list */}
+            <div className="space-y-3">
+              {reviews.map((review) => (
+                <div key={review.id} className="rounded-xl border border-border bg-background p-4">
+                  <div className="mb-1.5 flex items-center justify-between">
+                    <StarRating rating={review.rating} />
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(review.created_at).toLocaleDateString('vi-VN')}
+                    </span>
+                  </div>
+                  {review.comment && (
+                    <p className="text-sm text-foreground/80">{review.comment}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </>
         ) : (
-          <p className="text-sm text-muted-foreground">No reviews yet. Be the first!</p>
+          <p className="text-sm text-muted-foreground">Chưa có đánh giá nào. Hãy là người đầu tiên!</p>
         )}
 
-        {/* Add review form */}
+        {/* Review form */}
         {currentUserId ? (
-          <form onSubmit={handleReviewSubmit} className="mt-6 space-y-4 rounded-lg border border-border bg-card p-4">
-            <h3 className="font-semibold text-foreground">Leave a Review</h3>
+          <form
+            onSubmit={handleReviewSubmit}
+            className="mt-6 space-y-4 rounded-xl border border-border bg-muted/20 p-5"
+          >
+            <h3 className="font-semibold text-foreground">Viết đánh giá của bạn</h3>
             <div>
-              <label className="mb-1 block text-sm text-muted-foreground">Rating</label>
+              <label className="mb-2 block text-sm text-muted-foreground">Xếp hạng</label>
               <InteractiveStars value={reviewRating} onChange={setReviewRating} />
             </div>
             <div>
-              <label className="mb-1 block text-sm text-muted-foreground">Comment (optional)</label>
+              <label className="mb-2 block text-sm text-muted-foreground">
+                Nhận xét <span className="text-xs opacity-60">(không bắt buộc)</span>
+              </label>
               <textarea
                 value={reviewComment}
                 onChange={(e) => setReviewComment(e.target.value)}
                 rows={3}
-                placeholder="Share your experience..."
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm..."
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
-            <Button type="submit" disabled={submittingReview}>
-              {submittingReview ? 'Submitting...' : 'Submit Review'}
+            <Button type="submit" disabled={submittingReview} className="rounded-lg">
+              {submittingReview ? 'Đang gửi...' : 'Gửi đánh giá'}
             </Button>
           </form>
         ) : (
           <p className="mt-4 text-sm text-muted-foreground">
             <a href="/login" className="text-primary underline-offset-4 hover:underline">
-              Log in
+              Đăng nhập
             </a>{' '}
-            to leave a review.
+            để viết đánh giá sản phẩm.
           </p>
         )}
       </div>
