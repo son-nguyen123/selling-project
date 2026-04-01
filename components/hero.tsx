@@ -27,7 +27,7 @@ export default function Hero() {
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
-              href="/upload"
+              href="/sell"
               className="inline-flex items-center gap-1.5 px-5 py-2 border border-accent-foreground text-accent-foreground font-medium text-sm rounded-sm hover:bg-accent-foreground/10 transition-colors"
             >
               Bắt đầu bán
