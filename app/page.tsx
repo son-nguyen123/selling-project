@@ -1,7 +1,6 @@
 import { Badge } from '@/components/ui/badge'
 import Header from '@/components/header'
 import Hero from '@/components/hero'
-import ProjectCard from '@/components/project-card'
 import Footer from '@/components/footer'
 import SortDropdown from '@/components/sort-dropdown'
 import { createClient } from '@/lib/supabase/server'
@@ -9,24 +8,6 @@ import { Suspense } from 'react'
 import SkeletonCard from '@/components/skeleton-card'
 import { redirect } from 'next/navigation'
 import StoreProductCard from '@/components/store/store-product-card'
-
-interface Profile {
-  name: string | null
-  avatar_url: string | null
-}
-
-interface Project {
-  id: number
-  title: string
-  description: string | null
-  tech_stack: string | null
-  category: string | null
-  price: number
-  author_id: string | null
-  cover_image_url: string | null
-  created_at: string
-  profiles: Profile | null
-}
 
 interface StoreProduct {
   id: string
@@ -56,87 +37,31 @@ export default async function Home({
   }
 
   const supabase = await createClient()
-
-  // Get current user (null if not logged in)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  // Fetch projects
-  let projects: Project[] = []
+  let storeProducts: StoreProduct[] = []
   try {
-    let query = supabase
-      .from('projects')
-      .select(
-        `
-        id,
-        title,
-        description,
-        tech_stack,
-        category,
-        price,
-        author_id,
-        cover_image_url,
-        created_at,
-        profiles!author_id(name, avatar_url)
-      `,
-      )
-      .limit(50)
+    let spQuery = supabase
+      .from('store_products')
+      .select('id, name, price, description, category, stock, dashboard_image_url')
 
     if (category !== 'All') {
-      query = query.eq('category', category)
+      spQuery = spQuery.eq('category', category)
     }
 
     if (search) {
-      query = query.or(
-        `title.ilike.%${search}%,description.ilike.%${search}%,tech_stack.ilike.%${search}%`,
-      )
+      spQuery = spQuery.or(`name.ilike.%${search}%,description.ilike.%${search}%`)
     }
 
     if (sort === 'latest') {
-      query = query.order('created_at', { ascending: false })
+      spQuery = spQuery.order('created_at', { ascending: false })
     } else if (sort === 'price-low') {
-      query = query.order('price', { ascending: true })
+      spQuery = spQuery.order('price', { ascending: true })
     } else if (sort === 'price-high') {
-      query = query.order('price', { ascending: false })
+      spQuery = spQuery.order('price', { ascending: false })
     } else {
-      query = query.order('created_at', { ascending: false })
+      spQuery = spQuery.order('created_at', { ascending: false })
     }
 
-    const { data, error } = await query
-    if (!error && data) {
-      projects = data as unknown as Project[]
-    }
-  } catch (err) {
-    console.error(
-      'Failed to load projects. Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY env vars:',
-      err,
-    )
-  }
-
-  // Fetch user's wishlisted project IDs (only if logged in)
-  const wishlistedIds = new Set<number>()
-  if (user) {
-    try {
-      const { data: wishlist } = await supabase
-        .from('wishlists')
-        .select('project_id')
-        .eq('user_id', user.id)
-
-      wishlist?.forEach((row) => wishlistedIds.add(row.project_id as number))
-    } catch {
-      // Wishlist fetch is non-critical
-    }
-  }
-
-  // Fetch store products (admin-managed products)
-  let storeProducts: StoreProduct[] = []
-  try {
-    const { data: spData } = await supabase
-      .from('store_products')
-      .select('id, name, price, description, category, stock, dashboard_image_url')
-      .order('created_at', { ascending: false })
-      .limit(10)
+    const { data: spData } = await spQuery.limit(50)
     if (spData) storeProducts = spData as StoreProduct[]
   } catch {
     // Non-critical
@@ -172,48 +97,29 @@ export default async function Home({
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">{projects.length} sản phẩm</span>
+            <span className="text-sm text-muted-foreground">{storeProducts.length} sản phẩm</span>
             <SortDropdown sort={sort} search={search} category={category} />
           </div>
         </div>
 
-        {/* Shopee-style product grid: 2 cols mobile → 3 tablet → 4 md → 5 lg */}
+        {/* Primary product grid: admin-managed store products */}
         <Suspense fallback={
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
             {Array.from({ length: 10 }).map((_, i) => <SkeletonCard key={i} />)}
           </div>
         }>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
-            {projects.map((project) => (
-              <ProjectCard
-                key={project.id}
-                project={{
-                  id: project.id,
-                  title: project.title,
-                  author: project.profiles?.name ?? 'Unknown',
-                  price: parseFloat(String(project.price)),
-                  image:
-                    project.cover_image_url ||
-                    'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500&h=500&fit=crop',
-                  rating: 4.5,
-                  reviews: 0,
-                  category: project.category || 'Other',
-                  tech: project.tech_stack
-                    ? project.tech_stack.split(',').map((t) => t.trim())
-                    : [],
-                }}
-                initialIsWishlisted={wishlistedIds.has(project.id)}
-                isLoggedIn={!!user}
-              />
+            {storeProducts.map((product) => (
+              <StoreProductCard key={product.id} product={product} />
             ))}
           </div>
         </Suspense>
 
         {/* Empty State */}
-        {projects.length === 0 && (
+        {storeProducts.length === 0 && (
           <div className="text-center py-16 border border-dashed border-border rounded-sm">
             <p className="text-muted-foreground text-lg mb-4">
-              Không tìm thấy dự án nào phù hợp.
+              Không tìm thấy sản phẩm nào phù hợp.
             </p>
             <form action="/" method="get">
               <button type="submit" className="px-4 py-2 border border-border rounded-sm text-sm hover:border-accent hover:text-accent transition-colors">
@@ -221,25 +127,6 @@ export default async function Home({
               </button>
             </form>
           </div>
-        )}
-
-        {/* Store Products Section (admin-managed) */}
-        {storeProducts.length > 0 && (
-          <section className="mt-10">
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-border">
-              <h2 className="text-base font-semibold text-foreground uppercase tracking-wide">
-                Sản phẩm nổi bật
-              </h2>
-              <a href="/store" className="text-sm text-accent hover:underline">
-                Xem tất cả →
-              </a>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {storeProducts.map((product) => (
-                <StoreProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          </section>
         )}
       </main>
 
