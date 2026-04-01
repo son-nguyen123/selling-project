@@ -9,7 +9,7 @@ import { toast } from 'sonner'
 import { Plus, Trash2, Upload } from 'lucide-react'
 import Image from 'next/image'
 
-const CATEGORIES = ['Electronics', 'Clothing', 'Books', 'Food', 'Other']
+const CATEGORIES = ['Web App', 'Mobile', 'Backend', 'Component Library', 'Other']
 
 interface SpecEntry {
   key: string

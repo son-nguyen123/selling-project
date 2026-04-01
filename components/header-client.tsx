@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { User, Menu, X, LayoutDashboard, Upload, LogOut, LogIn, Search, ShoppingCart } from 'lucide-react'
+import { User, Menu, X, LayoutDashboard, LogOut, LogIn, Search, ShoppingCart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import {
@@ -116,14 +116,6 @@ export default function HeaderClient({ user, isAdmin = false }: HeaderClientProp
 
         {/* Right actions */}
         <div className="flex items-center gap-4 shrink-0 ml-auto md:ml-0">
-          {/* Sell link - admin only */}
-          {isAdmin && (
-            <Link href="/upload" className="hidden md:flex flex-col items-center gap-0.5 text-foreground hover:text-accent transition">
-              <Upload className="h-5 w-5" />
-              <span className="text-xs">Bán hàng</span>
-            </Link>
-          )}
-
           {/* Cart icon placeholder */}
           <Link href="/" className="hidden md:flex flex-col items-center gap-0.5 text-foreground hover:text-accent transition">
             <ShoppingCart className="h-5 w-5" />
@@ -163,14 +155,6 @@ export default function HeaderClient({ user, isAdmin = false }: HeaderClientProp
                     Dashboard
                   </Link>
                 </DropdownMenuItem>
-                {isAdmin && (
-                  <DropdownMenuItem asChild>
-                    <Link href="/upload" className="gap-2 cursor-pointer">
-                      <Upload className="h-4 w-4" />
-                      Đăng sản phẩm
-                    </Link>
-                  </DropdownMenuItem>
-                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="gap-2 cursor-pointer text-destructive focus:text-destructive">
                   <LogOut className="h-4 w-4" />
@@ -225,15 +209,6 @@ export default function HeaderClient({ user, isAdmin = false }: HeaderClientProp
             >
               Trang chủ
             </Link>
-            {isAdmin && (
-              <Link
-                href="/upload"
-                className="text-foreground hover:text-accent transition font-medium py-2"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Bán hàng
-              </Link>
-            )}
             {user ? (
               <>
                 <Link
