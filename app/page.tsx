@@ -4,6 +4,7 @@ import Hero from '@/components/hero'
 import Footer from '@/components/footer'
 import SortDropdown from '@/components/sort-dropdown'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { Suspense } from 'react'
 import SkeletonCard from '@/components/skeleton-card'
 import { redirect } from 'next/navigation'
@@ -36,7 +37,16 @@ export default async function Home({
     redirect('/check-email?expired=true')
   }
 
-  const supabase = await createClient()
+  // Use service role client to bypass RLS for public product listing.
+  // Falls back to the regular session client if SUPABASE_SERVICE_ROLE_KEY is not set.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let supabase: any
+  try {
+    supabase = createAdminClient()
+  } catch {
+    supabase = await createClient()
+  }
+
   let storeProducts: StoreProduct[] = []
   try {
     let spQuery = supabase
@@ -61,10 +71,11 @@ export default async function Home({
       spQuery = spQuery.order('created_at', { ascending: false })
     }
 
-    const { data: spData } = await spQuery.limit(50)
+    const { data: spData, error: spError } = await spQuery.limit(50)
+    if (spError) console.error('[page] store_products fetch error:', spError.message)
     if (spData) storeProducts = spData as StoreProduct[]
-  } catch {
-    // Non-critical
+  } catch (err) {
+    console.error('[page] store_products unexpected error:', err)
   }
 
   const categories = ['All', 'Web App', 'Mobile', 'Backend', 'Component Library', 'Other']
