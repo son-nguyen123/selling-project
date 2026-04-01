@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { User, Menu, X, LayoutDashboard, LogOut, LogIn, Search, ShoppingCart } from 'lucide-react'
+import { User, Menu, X, LayoutDashboard, LogOut, LogIn, Search, ShoppingCart, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import {
@@ -155,6 +155,14 @@ export default function HeaderClient({ user, isAdmin = false }: HeaderClientProp
                     Dashboard
                   </Link>
                 </DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin" className="gap-2 cursor-pointer">
+                      <ShieldCheck className="h-4 w-4" />
+                      Admin
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="gap-2 cursor-pointer text-destructive focus:text-destructive">
                   <LogOut className="h-4 w-4" />
@@ -190,6 +198,9 @@ export default function HeaderClient({ user, isAdmin = false }: HeaderClientProp
           {user && (
             <Link href="/dashboard" className="text-xs text-muted-foreground hover:text-accent transition py-1 ml-auto">Dashboard</Link>
           )}
+          {isAdmin && (
+            <Link href="/admin" className="text-xs text-muted-foreground hover:text-accent transition py-1 font-semibold">Admin</Link>
+          )}
         </div>
       </div>
 
@@ -218,6 +229,15 @@ export default function HeaderClient({ user, isAdmin = false }: HeaderClientProp
                 >
                   Dashboard
                 </Link>
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    className="text-foreground hover:text-accent transition font-medium py-2"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Admin
+                  </Link>
+                )}
                 <Button
                   variant="outline"
                   className="w-full gap-2 mt-2"
