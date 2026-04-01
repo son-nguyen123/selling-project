@@ -2,6 +2,8 @@ import { Badge } from '@/components/ui/badge'
 import Header from '@/components/header'
 import Hero from '@/components/hero'
 import Footer from '@/components/footer'
+import TrustBar from '@/components/trust-bar'
+import CategorySection from '@/components/category-section'
 import SortDropdown from '@/components/sort-dropdown'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -19,6 +21,14 @@ interface StoreProduct {
   stock: number
   dashboard_image_url?: string | null
 }
+
+const MARKETPLACE_CATEGORIES = [
+  { label: 'Source code mới nhất', category: 'Source code' },
+  { label: 'Website nổi bật', category: 'Website' },
+  { label: 'Phần mềm nổi bật', category: 'Phần mềm' },
+  { label: 'Ứng dụng nổi bật', category: 'Ứng dụng' },
+  { label: 'Dịch vụ máy chủ', category: 'Dịch vụ máy chủ' },
+]
 
 export default async function Home({
   searchParams,
@@ -71,73 +81,123 @@ export default async function Home({
       spQuery = spQuery.order('created_at', { ascending: false })
     }
 
-    const { data: spData, error: spError } = await spQuery.limit(50)
+    const { data: spData, error: spError } = await spQuery.limit(100)
     if (spError) console.error('[page] store_products fetch error:', spError.message)
     if (spData) storeProducts = spData as StoreProduct[]
   } catch (err) {
     console.error('[page] store_products unexpected error:', err)
   }
 
-  const categories = ['All', 'Web App', 'Mobile', 'Backend', 'Component Library', 'Other']
+  // Group products by category for the category sections
+  const productsByCategory = MARKETPLACE_CATEGORIES.reduce<Record<string, StoreProduct[]>>(
+    (acc, { category: cat }) => {
+      acc[cat] = storeProducts.filter((p) => p.category === cat)
+      return acc
+    },
+    {},
+  )
+
+  // Whether we're in filtered mode (search/category/sort applied)
+  const isFiltered = search || category !== 'All' || sort !== 'featured'
+
+  const allCategories = ['All', ...MARKETPLACE_CATEGORIES.map((c) => c.category)]
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <Hero />
+      <TrustBar activeCategory={category !== 'All' ? category : undefined} />
 
       <main className="max-w-7xl mx-auto px-4 py-6">
-        {/* Category + Sort row */}
-        <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-          {/* Category Pills */}
-          <div className="flex gap-1.5 flex-wrap">
-            {categories.map((cat) => (
-              <form key={cat} action="/" method="get" className="inline">
-                <input type="hidden" name="category" value={cat} />
-                <input type="hidden" name="search" value={search} />
-                <input type="hidden" name="sort" value={sort} />
-                <button type="submit">
-                  <Badge
-                    variant={category === cat ? 'default' : 'outline'}
-                    className={`cursor-pointer px-3 py-1 rounded-sm text-xs ${category === cat ? 'bg-accent text-accent-foreground border-accent' : ''}`}
-                  >
-                    {cat}
-                  </Badge>
-                </button>
-              </form>
+        {isFiltered ? (
+          <>
+            {/* Filtered view: category pills + sort + flat grid */}
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+              <div className="flex gap-1.5 flex-wrap">
+                {allCategories.map((cat) => (
+                  <form key={cat} action="/" method="get" className="inline">
+                    <input type="hidden" name="category" value={cat} />
+                    <input type="hidden" name="search" value={search} />
+                    <input type="hidden" name="sort" value={sort} />
+                    <button type="submit">
+                      <Badge
+                        variant={category === cat ? 'default' : 'outline'}
+                        className={`cursor-pointer px-3 py-1 rounded-sm text-xs ${category === cat ? 'bg-accent text-accent-foreground border-accent' : ''}`}
+                      >
+                        {cat}
+                      </Badge>
+                    </button>
+                  </form>
+                ))}
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-muted-foreground">{storeProducts.length} sản phẩm</span>
+                <SortDropdown sort={sort} search={search} category={category} />
+              </div>
+            </div>
+
+            <Suspense fallback={
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
+                {Array.from({ length: 10 }).map((_, i) => <SkeletonCard key={i} />)}
+              </div>
+            }>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
+                {storeProducts.map((product) => (
+                  <StoreProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            </Suspense>
+
+            {storeProducts.length === 0 && (
+              <div className="text-center py-16 border border-dashed border-border rounded-sm">
+                <p className="text-muted-foreground text-lg mb-4">
+                  Không tìm thấy sản phẩm nào phù hợp.
+                </p>
+                <form action="/" method="get">
+                  <button type="submit" className="px-4 py-2 border border-border rounded-sm text-sm hover:border-accent hover:text-accent transition-colors">
+                    Xoá bộ lọc
+                  </button>
+                </form>
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            {/* Default home view: per-category sections */}
+            {MARKETPLACE_CATEGORIES.map(({ label, category: cat }) => (
+              <CategorySection
+                key={cat}
+                title={label}
+                category={cat}
+                products={productsByCategory[cat] ?? []}
+              />
             ))}
-          </div>
 
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">{storeProducts.length} sản phẩm</span>
-            <SortDropdown sort={sort} search={search} category={category} />
-          </div>
-        </div>
-
-        {/* Primary product grid: admin-managed store products */}
-        <Suspense fallback={
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
-            {Array.from({ length: 10 }).map((_, i) => <SkeletonCard key={i} />)}
-          </div>
-        }>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
-            {storeProducts.map((product) => (
-              <StoreProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        </Suspense>
-
-        {/* Empty State */}
-        {storeProducts.length === 0 && (
-          <div className="text-center py-16 border border-dashed border-border rounded-sm">
-            <p className="text-muted-foreground text-lg mb-4">
-              Không tìm thấy sản phẩm nào phù hợp.
-            </p>
-            <form action="/" method="get">
-              <button type="submit" className="px-4 py-2 border border-border rounded-sm text-sm hover:border-accent hover:text-accent transition-colors">
-                Xoá bộ lọc
-              </button>
-            </form>
-          </div>
+            {/* Fallback: show all products if no categories have data */}
+            {MARKETPLACE_CATEGORIES.every(({ category: cat }) => (productsByCategory[cat] ?? []).length === 0) && (
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-1 h-6 bg-primary rounded-full" />
+                    <h2 className="text-lg font-bold text-foreground">Tất cả sản phẩm</h2>
+                  </div>
+                  <span className="text-sm text-muted-foreground">{storeProducts.length} sản phẩm</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
+                  {storeProducts.map((product) => (
+                    <StoreProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+                {storeProducts.length === 0 && (
+                  <div className="text-center py-16 border border-dashed border-border rounded-sm">
+                    <p className="text-muted-foreground text-lg mb-4">
+                      Chưa có sản phẩm nào. Quay lại sau nhé!
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+          </>
         )}
       </main>
 
