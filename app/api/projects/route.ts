@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { title, description, tech_stack, category, price, cover_image_url } = body
+    const { title, description, tech_stack, category, price, cover_image_url, stock, single_image_url, demo_video_url, gallery_urls, specs } = body
 
     // Server-side validation
     const ALLOWED_CATEGORIES = ['Web App', 'Mobile', 'Backend', 'Component Library', 'Other']
@@ -162,7 +162,11 @@ export async function POST(request: NextRequest) {
       description: project.description ?? null,
       category: project.category ?? null,
       dashboard_image_url: project.cover_image_url ?? null,
-      specs: { project_id: project.id },
+      stock: typeof stock === 'number' ? stock : (parseInt(stock, 10) || 0),
+      single_image_url: single_image_url ?? null,
+      demo_video_url: demo_video_url ?? null,
+      gallery_urls: Array.isArray(gallery_urls) && gallery_urls.length > 0 ? gallery_urls : null,
+      specs: { ...(specs && typeof specs === 'object' ? specs : {}), project_id: project.id },
     }
     try {
       let syncClient: ReturnType<typeof createAdminClient> | Awaited<ReturnType<typeof createClient>>

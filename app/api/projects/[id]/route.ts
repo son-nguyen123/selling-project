@@ -60,7 +60,7 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { title, description, tech_stack, category, price, cover_image_url } = body
+    const { title, description, tech_stack, category, price, cover_image_url, stock, single_image_url, demo_video_url, gallery_urls, specs } = body
 
     const { data, error } = await supabase
       .from('projects')
@@ -82,16 +82,26 @@ export async function PUT(
     // Sync update to store_products.
     try {
       const adminClient = createAdminClient()
+      const updatePayload: Record<string, unknown> = {
+        name: data.title,
+        price: data.price,
+        description: data.description ?? null,
+        category: data.category ?? null,
+        dashboard_image_url: data.cover_image_url ?? null,
+        single_image_url: single_image_url ?? null,
+        demo_video_url: demo_video_url ?? null,
+        gallery_urls: Array.isArray(gallery_urls) && gallery_urls.length > 0 ? gallery_urls : null,
+      }
+      if (typeof stock !== 'undefined') {
+        updatePayload.stock = typeof stock === 'number' ? stock : (parseInt(stock, 10) || 0)
+      }
+      if (specs && typeof specs === 'object') {
+        updatePayload.specs = { ...specs, project_id: id }
+      }
       const { error: syncError } = await adminClient
         .from('store_products')
-        .update({
-          name: data.title,
-          price: data.price,
-          description: data.description ?? null,
-          category: data.category ?? null,
-          dashboard_image_url: data.cover_image_url ?? null,
-        })
-        .contains('specs', { project_id: Number(id) })
+        .update(updatePayload)
+        .contains('specs', { project_id: id })
       if (syncError) {
         console.error('PUT /api/projects/[id] – store_products sync error:', syncError)
       }
@@ -128,7 +138,7 @@ export async function DELETE(
       const { error: syncError } = await adminClient
         .from('store_products')
         .delete()
-        .contains('specs', { project_id: Number(id) })
+        .contains('specs', { project_id: id })
       if (syncError) {
         console.error('DELETE /api/projects/[id] – store_products sync error:', syncError)
       }

@@ -416,12 +416,14 @@ export function ProductDetail({ product, reviews, currentUserId }: ProductDetail
         </div>
 
         {/* Specs table (full-width below the grid) */}
-        {product.specs && Object.keys(product.specs).length > 0 && (
+        {product.specs && Object.entries(product.specs).filter(([k]) => k !== 'project_id').length > 0 && (
           <div className="border-t border-border px-5 py-4">
             <h3 className="mb-3 text-sm font-semibold text-foreground">Thông số kỹ thuật</h3>
             <table className="w-full text-sm">
               <tbody>
-                {Object.entries(product.specs).map(([key, val], i) => (
+                {Object.entries(product.specs)
+                  .filter(([key]) => key !== 'project_id')
+                  .map(([key, val], i) => (
                   <tr
                     key={key}
                     className={`${i % 2 === 0 ? 'bg-muted/30' : ''} rounded`}
