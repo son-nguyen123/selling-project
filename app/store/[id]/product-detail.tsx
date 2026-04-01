@@ -214,7 +214,7 @@ export function ProductDetail({
       price: product.price,
       image_url: product.dashboard_image_url ?? product.single_image_url ?? undefined,
     })
-    toast.success(`Da them ${product.name} vao gio hang`)
+    toast.success(`Đã thêm ${product.name} vào giỏ hàng`)
   }
 
   function handleBuyNow() {
@@ -230,7 +230,7 @@ export function ProductDetail({
   async function handleReviewSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!currentUserId) {
-      toast.error('Ban can dang nhap de danh gia san pham')
+      toast.error('Bạn cần đăng nhập để đánh giá sản phẩm')
       return
     }
     setSubmittingReview(true)
@@ -246,18 +246,18 @@ export function ProductDetail({
         }),
       })
       if (!res.ok) throw new Error('Failed to submit review')
-      toast.success('Da gui danh gia thanh cong!')
+      toast.success('Đã gửi đánh giá thành công!')
       setReviewComment('')
       setReviewRating(5)
       router.refresh()
     } catch {
-      toast.error('Gui danh gia that bai, vui long thu lai')
+      toast.error('Gửi đánh giá thất bại, vui lòng thử lại')
     } finally {
       setSubmittingReview(false)
     }
   }
 
-  const installGuide = product.specs?.['Huong dan cai dat'] ?? product.specs?.install_guide ?? null
+  const installGuide = product.specs?.['Hướng dẫn cài đặt'] ?? product.specs?.install_guide ?? null
 
   return (
     <div className="space-y-6">
@@ -298,7 +298,7 @@ export function ProductDetail({
               ) : (
                 <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground">
                   <ShoppingCart className="h-20 w-20 opacity-10" />
-                  <p className="text-xs opacity-50">Chua co hinh anh</p>
+                  <p className="text-xs opacity-50">Chưa có hình ảnh</p>
                 </div>
               )}
             </div>
@@ -339,7 +339,7 @@ export function ProductDetail({
                         : 'border-transparent opacity-60 hover:border-border hover:opacity-100'
                     }`}
                   >
-                    <Image src={url} alt={`Anh ${idx + 1}`} fill className="object-cover" />
+                    <Image src={url} alt={`Ảnh ${idx + 1}`} fill className="object-cover" />
                   </button>
                 ))}
               </div>
@@ -356,11 +356,11 @@ export function ProductDetail({
               )}
               {product.stock > 0 ? (
                 <Badge className="rounded-full bg-green-600 px-3 py-0.5 text-xs font-medium hover:bg-green-700">
-                  Con hang
+                  Còn hàng
                 </Badge>
               ) : (
                 <Badge variant="destructive" className="rounded-full px-3 py-0.5 text-xs font-medium">
-                  Het hang
+                  Hết hàng
                 </Badge>
               )}
             </div>
@@ -372,7 +372,7 @@ export function ProductDetail({
                 {avgRating > 0 ? avgRating.toFixed(1) : '—'}
               </span>
               <StarRating rating={avgRatingRounded} />
-              <span className="text-sm text-muted-foreground">{reviews.length} danh gia</span>
+              <span className="text-sm text-muted-foreground">{reviews.length} đánh giá</span>
             </div>
 
             <div className="flex items-baseline gap-2 rounded-xl bg-primary/5 px-4 py-3">
@@ -384,21 +384,21 @@ export function ProductDetail({
             <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Shield className="h-3.5 w-3.5 text-green-500" />
-                Hang chinh hang
+                Hàng chính hãng
               </span>
               <span className="flex items-center gap-1">
                 <RotateCcw className="h-3.5 w-3.5 text-blue-500" />
-                Ho tro 7 ngay
+                Hỗ trợ 7 ngày
               </span>
               <span className="flex items-center gap-1">
                 <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
-                Ho tro 24/7
+                Hỗ trợ 24/7
               </span>
             </div>
 
             {product.stock > 0 && (
               <div className="flex items-center gap-4">
-                <span className="text-sm text-muted-foreground">So luong</span>
+                <span className="text-sm text-muted-foreground">Số lượng</span>
                 <div className="flex items-center rounded-lg border border-border">
                   <button
                     type="button"
@@ -420,7 +420,7 @@ export function ProductDetail({
                     <Plus className="h-3.5 w-3.5" />
                   </button>
                 </div>
-                <span className="text-xs text-muted-foreground">{product.stock} co san</span>
+                <span className="text-xs text-muted-foreground">{product.stock} có sẵn</span>
               </div>
             )}
 
@@ -433,7 +433,7 @@ export function ProductDetail({
                 disabled={product.stock === 0}
               >
                 <ShoppingCart className="mr-2 h-4 w-4" />
-                Them vao gio
+                Thêm vào giỏ
               </Button>
               <Button
                 size="lg"
@@ -442,19 +442,19 @@ export function ProductDetail({
                 disabled={product.stock === 0}
               >
                 <Download className="mr-2 h-4 w-4" />
-                Mua / Tai ngay
+                Mua / Tải ngay
               </Button>
             </div>
           </div>
         </div>
 
-        {product.specs && Object.entries(product.specs).filter(([k]) => k !== 'project_id' && k !== 'Huong dan cai dat' && k !== 'install_guide').length > 0 && (
+        {product.specs && Object.entries(product.specs).filter(([k]) => k !== 'project_id' && k !== 'Hướng dẫn cài đặt' && k !== 'install_guide').length > 0 && (
           <div className="border-t border-border px-5 py-4">
-            <h3 className="mb-3 text-sm font-semibold text-foreground">Thong so ky thuat</h3>
+            <h3 className="mb-3 text-sm font-semibold text-foreground">Thông số kỹ thuật</h3>
             <table className="w-full text-sm">
               <tbody>
                 {Object.entries(product.specs)
-                  .filter(([key]) => key !== 'project_id' && key !== 'Huong dan cai dat' && key !== 'install_guide')
+                  .filter(([key]) => key !== 'project_id' && key !== 'Hướng dẫn cài đặt' && key !== 'install_guide')
                   .map(([key, val], i) => (
                   <tr key={key} className={`${i % 2 === 0 ? 'bg-muted/30' : ''} rounded`}>
                     <td className="w-1/3 py-2 pl-2 pr-4 font-medium text-muted-foreground">{key}</td>
@@ -476,25 +476,25 @@ export function ProductDetail({
                 value="description"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary px-4 py-3 text-sm font-medium"
               >
-                Mo ta chi tiet
+                Mô tả chi tiết
               </TabsTrigger>
               <TabsTrigger
                 value="install"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary px-4 py-3 text-sm font-medium"
               >
-                Huong dan cai dat
+                Hướng dẫn cài đặt
               </TabsTrigger>
               <TabsTrigger
                 value="comments"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary px-4 py-3 text-sm font-medium"
               >
-                Binh luan (0)
+                Bình luận (0)
               </TabsTrigger>
               <TabsTrigger
                 value="reviews"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary px-4 py-3 text-sm font-medium"
               >
-                Danh gia ({reviews.length})
+                Đánh giá ({reviews.length})
               </TabsTrigger>
             </TabsList>
 
@@ -504,7 +504,7 @@ export function ProductDetail({
                   {product.description}
                 </p>
               ) : (
-                <p className="text-sm text-muted-foreground">Chua co mo ta chi tiet.</p>
+                <p className="text-sm text-muted-foreground">Chưa có mô tả chi tiết.</p>
               )}
             </TabsContent>
 
@@ -515,24 +515,24 @@ export function ProductDetail({
                 </p>
               ) : (
                 <div className="space-y-3 text-sm text-muted-foreground">
-                  <p className="font-medium text-foreground">Huong dan cai dat chung:</p>
+                  <p className="font-medium text-foreground">Hướng dẫn cài đặt chung:</p>
                   <ol className="list-decimal list-inside space-y-2 pl-2">
-                    <li>Tai xuong file sau khi thanh toan thanh cong</li>
-                    <li>Giai nen file ZIP vao thu muc du an</li>
-                    <li>Chay <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">npm install</code> de cai dat dependencies</li>
-                    <li>Cau hinh file <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">.env</code> theo huong dan trong README</li>
-                    <li>Chay <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">npm run dev</code> de khoi dong du an</li>
+                    <li>Tải xuống file sau khi thanh toán thành công</li>
+                    <li>Giải nén file ZIP vào thư mục dự án</li>
+                    <li>Chạy <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">npm install</code> để cài đặt dependencies</li>
+                    <li>Cấu hình file <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">.env</code> theo hướng dẫn trong README</li>
+                    <li>Chạy <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">npm run dev</code> để khởi động dự án</li>
                   </ol>
-                  <p className="text-xs opacity-70 mt-4">* Lien he ho tro neu gap van de trong qua trinh cai dat.</p>
+                  <p className="text-xs opacity-70 mt-4">* Liên hệ hỗ trợ nếu gặp vấn đề trong quá trình cài đặt.</p>
                 </div>
               )}
             </TabsContent>
 
             <TabsContent value="comments" className="mt-0 rounded-b-xl rounded-tr-xl border border-border bg-card p-5 shadow-sm">
               <p className="text-sm text-muted-foreground">
-                Chua co binh luan nao.{' '}
+                Chưa có bình luận nào.{' '}
                 {!currentUserId && (
-                  <><a href="/login" className="text-primary underline-offset-4 hover:underline">Dang nhap</a> de binh luan.</>
+                  <><a href="/login" className="text-primary underline-offset-4 hover:underline">Đăng nhập</a> để bình luận.</>
                 )}
               </p>
             </TabsContent>
@@ -544,7 +544,7 @@ export function ProductDetail({
                     <div className="flex flex-col items-center gap-1">
                       <span className="text-5xl font-extrabold text-yellow-400">{avgRating.toFixed(1)}</span>
                       <StarRating rating={avgRatingRounded} size="lg" />
-                      <span className="mt-1 text-xs text-muted-foreground">{reviews.length} danh gia</span>
+                      <span className="mt-1 text-xs text-muted-foreground">{reviews.length} đánh giá</span>
                     </div>
                     <div className="flex flex-1 flex-col gap-1.5">
                       {ratingCounts.map(({ star, count }) => (
@@ -567,36 +567,36 @@ export function ProductDetail({
                   </div>
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground">Chua co danh gia nao. Hay la nguoi dau tien!</p>
+                <p className="text-sm text-muted-foreground">Chưa có đánh giá nào. Hãy là người đầu tiên!</p>
               )}
 
               {currentUserId ? (
                 <form onSubmit={handleReviewSubmit} className="space-y-4 rounded-xl border border-border bg-muted/20 p-5">
-                  <h3 className="font-semibold text-foreground">Viet danh gia cua ban</h3>
+                  <h3 className="font-semibold text-foreground">Viết đánh giá của bạn</h3>
                   <div>
-                    <label className="mb-2 block text-sm text-muted-foreground">Xep hang</label>
+                    <label className="mb-2 block text-sm text-muted-foreground">Xếp hạng</label>
                     <InteractiveStars value={reviewRating} onChange={setReviewRating} />
                   </div>
                   <div>
                     <label className="mb-2 block text-sm text-muted-foreground">
-                      Nhan xet <span className="text-xs opacity-60">(khong bat buoc)</span>
+                      Nhận xét <span className="text-xs opacity-60">(không bắt buộc)</span>
                     </label>
                     <textarea
                       value={reviewComment}
                       onChange={(e) => setReviewComment(e.target.value)}
                       rows={3}
-                      placeholder="Chia se trai nghiem cua ban..."
+                      placeholder="Chia sẻ trải nghiệm của bạn..."
                       className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                   </div>
                   <Button type="submit" disabled={submittingReview} className="rounded-lg">
-                    {submittingReview ? 'Dang gui...' : 'Gui danh gia'}
+                    {submittingReview ? 'Đang gửi...' : 'Gửi đánh giá'}
                   </Button>
                 </form>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  <a href="/login" className="text-primary underline-offset-4 hover:underline">Dang nhap</a>{' '}
-                  de viet danh gia san pham.
+                  <a href="/login" className="text-primary underline-offset-4 hover:underline">Đăng nhập</a>{' '}
+                  để viết đánh giá sản phẩm.
                 </p>
               )}
             </TabsContent>
@@ -611,7 +611,7 @@ export function ProductDetail({
         <section>
           <div className="flex items-center gap-3 mb-4">
             <div className="w-1 h-6 bg-primary rounded-full" />
-            <h2 className="text-lg font-bold text-foreground">San pham tuong tu</h2>
+            <h2 className="text-lg font-bold text-foreground">Sản phẩm tương tự</h2>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {relatedProducts.map((p) => (
@@ -644,7 +644,7 @@ export function ProductDetail({
         <section>
           <div className="flex items-center gap-3 mb-4">
             <div className="w-1 h-6 bg-primary rounded-full" />
-            <h2 className="text-lg font-bold text-foreground">Goi y cho ban</h2>
+            <h2 className="text-lg font-bold text-foreground">Gợi ý cho bạn</h2>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {featuredProducts.slice(0, 5).map((p) => (
