@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(data)
   } catch (err) {
-    console.error('GET /api/projects error. Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY env vars:', err)
+    console.error('GET /api/projects error. Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY env vars:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(data, { status: 201 })
   } catch (err) {
-    console.error('POST /api/projects error. Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY env vars:', err)
+    console.error('POST /api/projects error. Check NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY env vars:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
