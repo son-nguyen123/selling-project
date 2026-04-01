@@ -7,9 +7,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { Plus, Trash2, Upload } from 'lucide-react'
-import Image from 'next/image'
 
-const CATEGORIES = ['Web App', 'Mobile', 'Backend', 'Component Library', 'Other']
+
+const CATEGORIES = ['Source code', 'Website', 'Phần mềm', 'Ứng dụng', 'Dịch vụ máy chủ', 'Other']
 
 interface SpecEntry {
   key: string
@@ -261,7 +261,7 @@ export default function ProductForm({ initialData, mode }: ProductFormProps) {
         </div>
         {dashboardImageUrl && (
           <div className="relative mt-2 h-32 w-48 overflow-hidden rounded-md border border-border">
-            <Image src={dashboardImageUrl} alt="Dashboard preview" fill className="object-cover" />
+            <img src={dashboardImageUrl} alt="Dashboard preview" className="h-full w-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
           </div>
         )}
         <Input
@@ -298,7 +298,7 @@ export default function ProductForm({ initialData, mode }: ProductFormProps) {
         </div>
         {singleImageUrl && (
           <div className="relative mt-2 h-32 w-48 overflow-hidden rounded-md border border-border">
-            <Image src={singleImageUrl} alt="Single page preview" fill className="object-cover" />
+            <img src={singleImageUrl} alt="Single page preview" className="h-full w-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
           </div>
         )}
         <Input
@@ -368,11 +368,28 @@ export default function ProductForm({ initialData, mode }: ProductFormProps) {
             }}
           />
         </div>
+        {/* Gallery URL paste input */}
+        <div className="mt-2 flex gap-2">
+          <Input
+            placeholder="Hoặc dán URL ảnh gallery rồi nhấn Enter..."
+            className="flex-1 text-sm"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                const val = (e.currentTarget as HTMLInputElement).value.trim()
+                if (val) {
+                  setGalleryUrls((prev) => [...prev, val])
+                  ;(e.currentTarget as HTMLInputElement).value = ''
+                }
+              }
+            }}
+          />
+        </div>
         {galleryUrls.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2">
             {galleryUrls.map((url, idx) => (
               <div key={idx} className="group relative h-20 w-28 overflow-hidden rounded-md border border-border">
-                <Image src={url} alt={`Gallery ${idx + 1}`} fill className="object-cover" />
+                <img src={url} alt={`Gallery ${idx + 1}`} className="h-full w-full object-cover" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
                 <button
                   type="button"
                   onClick={() => setGalleryUrls((prev) => prev.filter((_, i) => i !== idx))}
