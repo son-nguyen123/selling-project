@@ -53,7 +53,7 @@ export async function sendOrderConfirmationEmail(options: SendOrderEmailOptions)
               )
               .join('')}
           </ul>
-          <p style="margin:12px 0 0;font-size:12px;color:#166534;">Vui lòng lưu lại link tải trước khi link hết hạn.</p>
+          <p style="margin:12px 0 0;font-size:12px;color:#166534;">Vui lòng lưu lại link tải để sử dụng khi cần.</p>
         </div>`
       : ''
 

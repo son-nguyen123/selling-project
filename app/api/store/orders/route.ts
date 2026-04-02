@@ -70,6 +70,8 @@ export async function POST(request: NextRequest) {
 
     // Send order confirmation email with download links
     try {
+    // Fetch product download links using admin client to access all products
+    // regardless of RLS policies, since this runs server-side for a confirmed order.
       const adminSupabase = createAdminClient()
       const productIds = body.items
         .map((i: { product_id?: string }) => i.product_id)

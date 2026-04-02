@@ -310,7 +310,7 @@ export default function HeaderClient({ user, isAdmin = false, initialBalance = 0
           setBalance(data.balance)
         }
       })
-      .catch(() => {})
+      .catch((err) => console.error('Failed to fetch wallet balance:', err))
   }, [user, isAdmin])
 
   async function handleSignOut() {
