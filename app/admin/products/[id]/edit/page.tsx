@@ -40,6 +40,7 @@ export default async function EditProductPage({
             single_image_url: product.single_image_url ?? '',
             demo_video_url: product.demo_video_url ?? '',
             gallery_urls: product.gallery_urls ?? [],
+            demo_urls: Array.isArray(product.demo_urls) ? product.demo_urls : [],
             specs: specsEntries,
           }}
         />

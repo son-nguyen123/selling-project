@@ -20,7 +20,7 @@ export async function GET() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const [{ data: profile }, { data: transactions }] = await Promise.all([
+    const [{ data: profile }, txnResult] = await Promise.all([
       supabase.from('profiles').select('balance').eq('id', user.id).single(),
       supabase
         .from('transactions')
@@ -30,9 +30,17 @@ export async function GET() {
         .limit(20),
     ])
 
+    if (txnResult.error?.message?.includes('relation') || txnResult.error?.message?.includes('schema cache')) {
+      return NextResponse.json({
+        balance: profile?.balance ?? 0,
+        transactions: [],
+        warning: 'Bảng transactions chưa tồn tại. Vui lòng chạy migration 006_ensure_complete_schema.sql trong Supabase SQL editor.',
+      })
+    }
+
     return NextResponse.json({
       balance: profile?.balance ?? 0,
-      transactions: transactions ?? [],
+      transactions: txnResult.data ?? [],
     })
   } catch (err) {
     console.error('GET /api/wallet error:', err)
@@ -69,7 +77,10 @@ export async function POST(request: NextRequest) {
 
     if (txnErr) {
       console.error('INSERT transaction error:', txnErr)
-      return NextResponse.json({ error: txnErr.message }, { status: 500 })
+      const msg = txnErr.message?.includes('relation') || txnErr.message?.includes('schema cache')
+        ? 'Bảng transactions chưa tồn tại. Vui lòng chạy migration 006_ensure_complete_schema.sql trong Supabase SQL editor.'
+        : txnErr.message
+      return NextResponse.json({ error: msg }, { status: 500 })
     }
 
     // Credit balance
