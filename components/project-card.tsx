@@ -131,7 +131,7 @@ export default function ProjectCard({
 
         <div className="flex items-center justify-between">
           <span className="text-accent font-bold text-base">
-            ${Number(project.price).toFixed(0)}
+            {Number(project.price).toLocaleString('vi-VN')}₫
           </span>
           <span className="text-xs text-muted-foreground">by {project.author}</span>
         </div>

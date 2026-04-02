@@ -21,13 +21,19 @@ export async function GET() {
 
     const adminSupabase = createAdminClient()
 
-    const [qrResult, txnResult] = await Promise.all([
+    const [qrResult, txnResult, pendingResult] = await Promise.all([
       adminSupabase.from('admin_settings').select('value').eq('key', 'qr_image').single(),
       adminSupabase
         .from('transactions')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(50),
+      adminSupabase
+        .from('transactions')
+        .select('*')
+        .eq('status', 'pending')
+        .eq('type', 'deposit')
+        .order('created_at', { ascending: false }),
     ])
 
     if (qrResult.error?.message?.includes('relation') || qrResult.error?.message?.includes('schema cache')) {
@@ -47,6 +53,7 @@ export async function GET() {
     return NextResponse.json({
       qr_image: qrResult.data?.value ?? null,
       transactions: txnResult.data ?? [],
+      pending_deposits: pendingResult.data ?? [],
     })
   } catch (err) {
     console.error('GET /api/admin/wallet error:', err)
@@ -83,6 +90,71 @@ export async function POST(request: NextRequest) {
           : error.message
         return NextResponse.json({ error: msg }, { status: 500 })
       }
+      return NextResponse.json({ success: true })
+    }
+
+    if (body.action === 'confirm_deposit') {
+      const txnId = Number(body.transaction_id)
+      if (!txnId) return NextResponse.json({ error: 'transaction_id is required' }, { status: 400 })
+
+      // Get transaction
+      const { data: txn, error: txnErr } = await adminSupabase
+        .from('transactions')
+        .select('*')
+        .eq('id', txnId)
+        .single()
+
+      if (txnErr || !txn) return NextResponse.json({ error: 'Giao dịch không tồn tại' }, { status: 404 })
+      if (txn.status !== 'pending') return NextResponse.json({ error: 'Giao dịch không ở trạng thái chờ duyệt' }, { status: 400 })
+
+      // Credit user balance
+      const { data: profile, error: profileErr } = await adminSupabase
+        .from('profiles')
+        .select('balance')
+        .eq('id', txn.user_id)
+        .single()
+
+      if (profileErr) return NextResponse.json({ error: profileErr.message }, { status: 500 })
+
+      const newBalance = (profile?.balance ?? 0) + txn.amount
+      const { error: updateErr } = await adminSupabase
+        .from('profiles')
+        .update({ balance: newBalance })
+        .eq('id', txn.user_id)
+
+      if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 })
+
+      // Mark transaction as completed
+      const { error: statusErr } = await adminSupabase
+        .from('transactions')
+        .update({ status: 'completed' })
+        .eq('id', txnId)
+
+      if (statusErr) return NextResponse.json({ error: statusErr.message }, { status: 500 })
+
+      return NextResponse.json({ success: true, balance: newBalance })
+    }
+
+    if (body.action === 'reject_deposit') {
+      const txnId = Number(body.transaction_id)
+      if (!txnId) return NextResponse.json({ error: 'transaction_id is required' }, { status: 400 })
+
+      const { data: txn, error: txnErr } = await adminSupabase
+        .from('transactions')
+        .select('status')
+        .eq('id', txnId)
+        .single()
+
+      if (txnErr || !txn) return NextResponse.json({ error: 'Giao dịch không tồn tại' }, { status: 404 })
+      if (txn.status !== 'pending') return NextResponse.json({ error: 'Giao dịch không ở trạng thái chờ duyệt' }, { status: 400 })
+
+      const { error: statusErr } = await adminSupabase
+        .from('transactions')
+        .update({ status: 'rejected' })
+        .eq('id', txnId)
+
+      if (statusErr) return NextResponse.json({ error: statusErr.message }, { status: 500 })
+
       return NextResponse.json({ success: true })
     }
 

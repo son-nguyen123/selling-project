@@ -197,15 +197,15 @@ export default function ProjectForm({ initialData, mode }: ProjectFormProps) {
           />
         </div>
         <div>
-          <Label htmlFor="price">Price ($) *</Label>
+          <Label htmlFor="price">Giá (₫) *</Label>
           <Input
             id="price"
             type="number"
-            step="0.01"
+            step="1"
             min="0"
             value={price}
             onChange={(e) => setPrice(e.target.value)}
-            placeholder="0.00"
+            placeholder="50000"
             required
             className="mt-1"
           />

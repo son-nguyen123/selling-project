@@ -10,11 +10,11 @@ export default function FilterSidebar() {
     <div className="space-y-6">
       {/* Price Range */}
       <Card className="p-6">
-        <h3 className="font-bold text-foreground mb-4">Price Range</h3>
+        <h3 className="font-bold text-foreground mb-4">Khoảng giá</h3>
         <Slider defaultValue={[0, 100]} max={100} step={1} className="mb-4" />
         <div className="flex justify-between text-sm text-muted-foreground">
-          <span>$0</span>
-          <span>$100+</span>
+          <span>0₫</span>
+          <span>5,000,000₫+</span>
         </div>
       </Card>
 

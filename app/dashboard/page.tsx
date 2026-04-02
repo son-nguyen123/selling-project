@@ -46,7 +46,7 @@ function ShopeeCard({ project }: { project: Project }) {
           </h3>
         </Link>
         <p className="text-accent font-bold text-base mb-2">
-          ${Number(project.price).toFixed(0)}
+          {Number(project.price).toLocaleString('vi-VN')}₫
         </p>
         <div className="flex gap-1.5">
           <Link href={`/projects/${project.id}`} className="flex-1">
