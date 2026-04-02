@@ -238,7 +238,7 @@ export default function WalletSection({
             </div>
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Số dư ví</p>
-              <p className="text-3xl font-extrabold text-primary leading-tight">
+              <p className={`text-3xl font-extrabold leading-tight ${balance > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500'}`}>
                 {balance.toLocaleString('vi-VN')}₫
               </p>
             </div>
