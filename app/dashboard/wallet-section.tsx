@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { Wallet, QrCode, X, Plus, Upload, Clock } from 'lucide-react'
@@ -36,12 +36,26 @@ function TopupModal({
   const [proofPreview, setProofPreview] = useState<string | null>(null)
   const [status, setStatus] = useState<DepositStatus>('idle')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const proofPreviewRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (proofPreviewRef.current) {
+        URL.revokeObjectURL(proofPreviewRef.current)
+      }
+    }
+  }, [])
 
   function handleProofChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    if (proofPreviewRef.current) {
+      URL.revokeObjectURL(proofPreviewRef.current)
+    }
     setProofFile(file)
-    setProofPreview(URL.createObjectURL(file))
+    const url = URL.createObjectURL(file)
+    proofPreviewRef.current = url
+    setProofPreview(url)
   }
 
   async function handleConfirm() {
@@ -86,6 +100,7 @@ function TopupModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="relative w-full max-w-sm rounded-2xl bg-card border border-border shadow-2xl p-6">
         <button
+          aria-label="Đóng"
           onClick={onClose}
           className="absolute right-4 top-4 rounded-full p-1 hover:bg-muted transition-colors"
         >
@@ -158,6 +173,7 @@ function TopupModal({
                       className="w-full h-32 object-cover rounded-lg border border-border"
                     />
                     <button
+                      aria-label="Xóa ảnh"
                       onClick={() => { setProofFile(null); setProofPreview(null) }}
                       className="absolute top-1 right-1 bg-black/60 rounded-full p-0.5 hover:bg-black/80"
                     >

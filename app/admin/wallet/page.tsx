@@ -197,7 +197,7 @@ export default function AdminWalletPage() {
                   <p className="text-xs text-zinc-500">{new Date(txn.created_at).toLocaleString('vi-VN')}</p>
                 </div>
                 {txn.proof_image && (
-                  <a href={txn.proof_image} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                  <a href={txn.proof_image} target="_blank" rel="noopener noreferrer" aria-label="Xem ảnh chuyển khoản đầy đủ" className="shrink-0">
                     <img
                       src={txn.proof_image}
                       alt="Ảnh chuyển khoản"

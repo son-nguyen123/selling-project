@@ -105,6 +105,8 @@ function DepositModal({
   const [status, setStatus] = useState<DepositStatus>('idle')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const proofPreviewRef = useRef<string | null>(null)
+
   useEffect(() => {
     fetch('/api/wallet')
       .then((r) => r.json())
@@ -112,13 +114,22 @@ function DepositModal({
         setQrImage(data.qr_image ?? null)
       })
       .catch(() => {})
+    return () => {
+      if (proofPreviewRef.current) {
+        URL.revokeObjectURL(proofPreviewRef.current)
+      }
+    }
   }, [])
 
   function handleProofChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    if (proofPreviewRef.current) {
+      URL.revokeObjectURL(proofPreviewRef.current)
+    }
     setProofFile(file)
     const url = URL.createObjectURL(file)
+    proofPreviewRef.current = url
     setProofPreview(url)
   }
 
@@ -170,6 +181,7 @@ function DepositModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="relative w-full max-w-sm rounded-2xl bg-card border border-border shadow-2xl p-6">
         <button
+          aria-label="Đóng"
           onClick={onClose}
           className="absolute right-4 top-4 rounded-full p-1 hover:bg-muted transition-colors"
         >
@@ -242,6 +254,7 @@ function DepositModal({
                       className="w-full h-32 object-cover rounded-lg border border-border"
                     />
                     <button
+                      aria-label="Xóa ảnh"
                       onClick={() => { setProofFile(null); setProofPreview(null) }}
                       className="absolute top-1 right-1 bg-black/60 rounded-full p-0.5 hover:bg-black/80"
                     >
