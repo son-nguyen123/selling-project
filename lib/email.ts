@@ -57,17 +57,18 @@ export async function sendOrderConfirmationEmail(options: SendOrderEmailOptions)
         </div>`
       : ''
 
-  await resend.emails.send({
-    from: process.env.RESEND_FROM_EMAIL ?? 'noreply@projecthub.vn',
-    to,
-    subject: `Xác nhận đơn hàng #${orderId.slice(0, 8).toUpperCase()} – ProjectHub`,
-    html: `<!DOCTYPE html>
+  try {
+    const response = await resend.emails.send({
+      from: 'Project Selling <onboarding@resend.dev>',
+      to,
+      subject: `Xác nhận đơn hàng #${orderId.slice(0, 8).toUpperCase()} – Project Selling`,
+      html: `<!DOCTYPE html>
 <html lang="vi">
 <head><meta charset="UTF-8"/></head>
 <body style="font-family:sans-serif;background:#f9fafb;margin:0;padding:0;">
   <div style="max-width:600px;margin:32px auto;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
     <div style="background:#e53e3e;padding:24px 32px;">
-      <h1 style="margin:0;color:#ffffff;font-size:22px;">ProjectHub</h1>
+      <h1 style="margin:0;color:#ffffff;font-size:22px;">Project Selling</h1>
       <p style="margin:4px 0 0;color:#fecaca;font-size:14px;">Đặt hàng thành công!</p>
     </div>
     <div style="padding:32px;">
@@ -95,11 +96,15 @@ export async function sendOrderConfirmationEmail(options: SendOrderEmailOptions)
 
       <p style="margin-top:24px;color:#6b7280;font-size:13px;">
         Nếu bạn có câu hỏi, hãy liên hệ với chúng tôi.<br/>
-        Cảm ơn bạn đã mua sắm tại <strong>ProjectHub</strong>!
+        Cảm ơn bạn đã mua sắm tại <strong>Project Selling</strong>!
       </p>
     </div>
   </div>
 </body>
 </html>`,
-  })
+    })
+    console.log('[email] Order confirmation sent successfully:', response)
+  } catch (error) {
+    console.error('[email] Failed to send order confirmation email:', error)
+  }
 }
