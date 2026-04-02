@@ -146,7 +146,7 @@ export default async function ProjectDetailPage({
               <div className="bg-muted/50 rounded-sm px-4 py-3">
                 <div className="flex items-baseline gap-2">
                   <span className="text-3xl md:text-4xl font-bold text-accent">
-                    ${Number(project.price).toFixed(2)}
+                    {Number(project.price).toLocaleString('vi-VN')}₫
                   </span>
                   <span className="text-xs text-muted-foreground">thanh toán một lần</span>
                 </div>

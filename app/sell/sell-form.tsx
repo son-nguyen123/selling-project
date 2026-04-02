@@ -140,18 +140,18 @@ export default function SellForm() {
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <Label htmlFor="price">
-            Giá bán (USD) <span className="text-destructive">*</span>
+            Giá bán (₫) <span className="text-destructive">*</span>
           </Label>
           <div className="relative mt-1">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">₫</span>
             <Input
               id="price"
               type="number"
-              step="0.01"
+              step="1"
               min="0"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
-              placeholder="0.00"
+              placeholder="50000"
               required
               className="pl-7"
             />

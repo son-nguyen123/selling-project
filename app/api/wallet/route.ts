@@ -4,14 +4,12 @@ import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * GET /api/wallet
- * Returns current user's balance and recent transactions.
+ * Returns current user's balance, recent transactions, and admin QR image.
  *
  * POST /api/wallet
- * Body: { amount: number, note?: string }
- * Creates a pending deposit transaction.
- * Admin must approve it via /api/admin/wallet to credit the balance.
- * For demo purposes the transaction is immediately marked 'completed'
- * and the balance is credited right away.
+ * Body: { amount: number, note?: string, proof_image?: string }
+ * Creates a PENDING deposit transaction that requires admin confirmation.
+ * Admin approves via /api/admin/wallet with action 'confirm_deposit'.
  */
 
 export async function GET() {
@@ -20,7 +18,9 @@ export async function GET() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const [{ data: profile }, txnResult] = await Promise.all([
+    const adminSupabase = createAdminClient()
+
+    const [{ data: profile }, txnResult, qrResult] = await Promise.all([
       supabase.from('profiles').select('balance').eq('id', user.id).single(),
       supabase
         .from('transactions')
@@ -28,12 +28,14 @@ export async function GET() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(20),
+      adminSupabase.from('admin_settings').select('value').eq('key', 'qr_image').single(),
     ])
 
     if (txnResult.error?.message?.includes('relation') || txnResult.error?.message?.includes('schema cache')) {
       return NextResponse.json({
         balance: profile?.balance ?? 0,
         transactions: [],
+        qr_image: qrResult.data?.value ?? null,
         warning: 'Bảng transactions chưa tồn tại. Vui lòng chạy migration 006_ensure_complete_schema.sql trong Supabase SQL editor.',
       })
     }
@@ -41,6 +43,7 @@ export async function GET() {
     return NextResponse.json({
       balance: profile?.balance ?? 0,
       transactions: txnResult.data ?? [],
+      qr_image: qrResult.data?.value ?? null,
     })
   } catch (err) {
     console.error('GET /api/wallet error:', err)
@@ -62,15 +65,16 @@ export async function POST(request: NextRequest) {
 
     const adminSupabase = createAdminClient()
 
-    // Insert transaction (demo: status = completed, credit immediately)
+    // Insert PENDING transaction – admin must confirm to credit balance
     const { data: txn, error: txnErr } = await adminSupabase
       .from('transactions')
       .insert({
         user_id: user.id,
         amount,
         type: 'deposit',
-        status: 'completed',
-        note: body.note ?? 'Nạp tiền qua QR (demo)',
+        status: 'pending',
+        note: body.note ?? 'Nạp tiền qua QR',
+        proof_image: body.proof_image ?? null,
       })
       .select()
       .single()
@@ -83,28 +87,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: msg }, { status: 500 })
     }
 
-    // Credit balance
-    const { data: profile, error: profileErr } = await adminSupabase
+    const { data: profile } = await adminSupabase
       .from('profiles')
       .select('balance')
       .eq('id', user.id)
       .single()
 
-    if (profileErr) {
-      return NextResponse.json({ error: profileErr.message }, { status: 500 })
-    }
-
-    const newBalance = (profile?.balance ?? 0) + amount
-    const { error: updateErr } = await adminSupabase
-      .from('profiles')
-      .update({ balance: newBalance })
-      .eq('id', user.id)
-
-    if (updateErr) {
-      return NextResponse.json({ error: updateErr.message }, { status: 500 })
-    }
-
-    return NextResponse.json({ balance: newBalance, transaction: txn }, { status: 201 })
+    return NextResponse.json({ balance: profile?.balance ?? 0, transaction: txn }, { status: 201 })
   } catch (err) {
     console.error('POST /api/wallet error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

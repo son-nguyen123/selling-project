@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
-import { QrCode, Upload, Wallet, Plus } from 'lucide-react'
+import { QrCode, Upload, Wallet, Plus, CheckCircle, XCircle, Clock } from 'lucide-react'
 
 interface Transaction {
   id: number
@@ -14,6 +14,7 @@ interface Transaction {
   type: string
   status: string
   note: string | null
+  proof_image?: string | null
   created_at: string
 }
 
@@ -33,23 +34,29 @@ async function uploadFile(file: File): Promise<string> {
 export default function AdminWalletPage() {
   const [qrImage, setQrImage] = useState<string>('')
   const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [pendingDeposits, setPendingDeposits] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [savingQr, setSavingQr] = useState(false)
   const [topupUserId, setTopupUserId] = useState('')
   const [topupAmount, setTopupAmount] = useState('')
   const [topupNote, setTopupNote] = useState('')
   const [toppingUp, setToppingUp] = useState(false)
+  const [processingId, setProcessingId] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  async function loadData() {
+    const res = await fetch('/api/admin/wallet')
+    if (res.ok) {
+      const data = await res.json()
+      setQrImage(data.qr_image ?? '')
+      setTransactions(data.transactions ?? [])
+      setPendingDeposits(data.pending_deposits ?? [])
+    }
+    setLoading(false)
+  }
+
   useEffect(() => {
-    fetch('/api/admin/wallet')
-      .then((r) => r.json())
-      .then((data) => {
-        setQrImage(data.qr_image ?? '')
-        setTransactions(data.transactions ?? [])
-        setLoading(false)
-      })
-      .catch(() => setLoading(false))
+    loadData().catch(() => setLoading(false))
   }, [])
 
   async function handleQrFileUpload(file: File) {
@@ -109,16 +116,49 @@ export default function AdminWalletPage() {
       setTopupUserId('')
       setTopupAmount('')
       setTopupNote('')
-      // Reload transactions
-      const refreshRes = await fetch('/api/admin/wallet')
-      if (refreshRes.ok) {
-        const refreshData = await refreshRes.json()
-        setTransactions(refreshData.transactions ?? [])
-      }
+      await loadData()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Lỗi nạp tiền')
     } finally {
       setToppingUp(false)
+    }
+  }
+
+  async function handleConfirmDeposit(txnId: number, amount: number) {
+    setProcessingId(txnId)
+    try {
+      const res = await fetch('/api/admin/wallet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'confirm_deposit', transaction_id: txnId }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Lỗi xác nhận')
+      toast.success(`Đã xác nhận nạp ${amount.toLocaleString('vi-VN')}₫`)
+      await loadData()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Lỗi xác nhận')
+    } finally {
+      setProcessingId(null)
+    }
+  }
+
+  async function handleRejectDeposit(txnId: number) {
+    setProcessingId(txnId)
+    try {
+      const res = await fetch('/api/admin/wallet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reject_deposit', transaction_id: txnId }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Lỗi từ chối')
+      toast.success('Đã từ chối yêu cầu nạp tiền')
+      await loadData()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Lỗi từ chối')
+    } finally {
+      setProcessingId(null)
     }
   }
 
@@ -134,8 +174,63 @@ export default function AdminWalletPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-white">Quản lý ví tiền</h1>
-        <p className="text-sm text-zinc-400 mt-0.5">Cập nhật QR thanh toán và nạp tiền thủ công cho user</p>
+        <p className="text-sm text-zinc-400 mt-0.5">Cập nhật QR thanh toán và xác nhận yêu cầu nạp tiền</p>
       </div>
+
+      {/* Pending Deposits */}
+      {pendingDeposits.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <Clock className="h-4 w-4 text-yellow-400" />
+            <h2 className="text-base font-semibold text-white">
+              Yêu cầu nạp tiền chờ duyệt
+              <span className="ml-2 rounded-full bg-yellow-500/20 text-yellow-400 text-xs px-2 py-0.5">{pendingDeposits.length}</span>
+            </h2>
+          </div>
+          <div className="space-y-3">
+            {pendingDeposits.map((txn) => (
+              <div key={txn.id} className="rounded-xl border border-yellow-500/30 bg-zinc-900 p-4 flex flex-col sm:flex-row gap-4">
+                <div className="flex-1 space-y-1.5">
+                  <p className="text-xs text-zinc-500 font-mono">ID: {txn.id} · User: {txn.user_id}</p>
+                  <p className="text-lg font-bold text-yellow-400">+{txn.amount.toLocaleString('vi-VN')}₫</p>
+                  <p className="text-xs text-zinc-400">{txn.note ?? 'Nạp tiền qua QR'}</p>
+                  <p className="text-xs text-zinc-500">{new Date(txn.created_at).toLocaleString('vi-VN')}</p>
+                </div>
+                {txn.proof_image && (
+                  <a href={txn.proof_image} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                    <img
+                      src={txn.proof_image}
+                      alt="Ảnh chuyển khoản"
+                      className="w-24 h-24 object-cover rounded-lg border border-zinc-700 hover:opacity-90 transition-opacity"
+                    />
+                  </a>
+                )}
+                <div className="flex sm:flex-col gap-2 justify-end">
+                  <Button
+                    size="sm"
+                    onClick={() => handleConfirmDeposit(txn.id, txn.amount)}
+                    disabled={processingId === txn.id}
+                    className="gap-1.5 bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <CheckCircle className="h-3.5 w-3.5" />
+                    Xác nhận
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleRejectDeposit(txn.id)}
+                    disabled={processingId === txn.id}
+                    className="gap-1.5 border-red-500/50 text-red-400 hover:bg-red-500/10"
+                  >
+                    <XCircle className="h-3.5 w-3.5" />
+                    Từ chối
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* QR Management */}
@@ -291,7 +386,7 @@ export default function AdminWalletPage() {
                             ? 'bg-yellow-500/20 text-yellow-400'
                             : 'bg-red-500/20 text-red-400'
                         }`}>
-                          {txn.status}
+                          {txn.status === 'completed' ? 'Thành công' : txn.status === 'pending' ? 'Chờ duyệt' : 'Từ chối'}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-zinc-400 text-xs max-w-[180px] truncate">{txn.note ?? '—'}</td>
