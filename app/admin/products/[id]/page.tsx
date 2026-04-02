@@ -7,6 +7,20 @@ import { Card } from '@/components/ui/card'
 import { ArrowLeft, Pencil, Package, Tag, DollarSign, Layers } from 'lucide-react'
 import Image from 'next/image'
 
+function getVideoInfo(url: string): { isYoutube: boolean; embedUrl: string } {
+  try {
+    const parsed = new URL(url)
+    const ytId = parsed.searchParams.get('v')
+    if (parsed.hostname.includes('youtube.com') && ytId) {
+      return { isYoutube: true, embedUrl: `https://www.youtube.com/embed/${ytId}?rel=0` }
+    }
+    if (parsed.hostname === 'youtu.be') {
+      return { isYoutube: true, embedUrl: `https://www.youtube.com/embed/${parsed.pathname.slice(1)}?rel=0` }
+    }
+  } catch { /* invalid url */ }
+  return { isYoutube: false, embedUrl: url }
+}
+
 export default async function AdminProductDetailPage({
   params,
 }: {
@@ -101,16 +115,31 @@ export default async function AdminProductDetailPage({
           )}
 
           {/* Demo video */}
-          {product.demo_video_url && (
-            <div>
-              <p className="mb-2 text-sm font-medium text-muted-foreground">Video demo</p>
-              <video
-                src={product.demo_video_url}
-                controls
-                className="w-full rounded-lg border border-border"
-              />
-            </div>
-          )}
+          {product.demo_video_url && (() => {
+            const videoInfo = getVideoInfo(product.demo_video_url)
+            return (
+              <div>
+                <p className="mb-2 text-sm font-medium text-muted-foreground">Video demo</p>
+                {videoInfo.isYoutube ? (
+                  <div className="aspect-video w-full overflow-hidden rounded-lg border border-border">
+                    <iframe
+                      src={videoInfo.embedUrl}
+                      className="h-full w-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      title="Video demo"
+                    />
+                  </div>
+                ) : (
+                  <video
+                    src={product.demo_video_url}
+                    controls
+                    className="w-full rounded-lg border border-border"
+                  />
+                )}
+              </div>
+            )
+          })()}
 
           {/* Description */}
           {product.description && (
