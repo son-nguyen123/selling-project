@@ -12,10 +12,12 @@ import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
 function getVideoInfo(url: string): { isYoutube: boolean; embedUrl: string; thumbnailUrl?: string } {
+  if (!url || typeof url !== 'string') return { isYoutube: false, embedUrl: url ?? '' }
+  const ytIdRegex = /^[a-zA-Z0-9_-]{1,20}$/
   try {
     const parsed = new URL(url)
     const ytId = parsed.searchParams.get('v')
-    if (parsed.hostname.includes('youtube.com') && ytId) {
+    if (parsed.hostname.includes('youtube.com') && ytId && ytIdRegex.test(ytId)) {
       return {
         isYoutube: true,
         embedUrl: `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0`,
@@ -24,10 +26,12 @@ function getVideoInfo(url: string): { isYoutube: boolean; embedUrl: string; thum
     }
     if (parsed.hostname === 'youtu.be') {
       const id = parsed.pathname.slice(1)
-      return {
-        isYoutube: true,
-        embedUrl: `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`,
-        thumbnailUrl: `https://img.youtube.com/vi/${id}/mqdefault.jpg`,
+      if (id && ytIdRegex.test(id)) {
+        return {
+          isYoutube: true,
+          embedUrl: `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`,
+          thumbnailUrl: `https://img.youtube.com/vi/${id}/mqdefault.jpg`,
+        }
       }
     }
   } catch { /* invalid url */ }
