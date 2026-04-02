@@ -8,14 +8,19 @@ import { ArrowLeft, Pencil, Package, Tag, DollarSign, Layers } from 'lucide-reac
 import Image from 'next/image'
 
 function getVideoInfo(url: string): { isYoutube: boolean; embedUrl: string } {
+  if (!url || typeof url !== 'string') return { isYoutube: false, embedUrl: url ?? '' }
+  const ytIdRegex = /^[a-zA-Z0-9_-]{1,20}$/
   try {
     const parsed = new URL(url)
     const ytId = parsed.searchParams.get('v')
-    if (parsed.hostname.includes('youtube.com') && ytId) {
+    if (parsed.hostname.includes('youtube.com') && ytId && ytIdRegex.test(ytId)) {
       return { isYoutube: true, embedUrl: `https://www.youtube.com/embed/${ytId}?rel=0` }
     }
     if (parsed.hostname === 'youtu.be') {
-      return { isYoutube: true, embedUrl: `https://www.youtube.com/embed/${parsed.pathname.slice(1)}?rel=0` }
+      const id = parsed.pathname.slice(1)
+      if (id && ytIdRegex.test(id)) {
+        return { isYoutube: true, embedUrl: `https://www.youtube.com/embed/${id}?rel=0` }
+      }
     }
   } catch { /* invalid url */ }
   return { isYoutube: false, embedUrl: url }
@@ -132,7 +137,7 @@ export default async function AdminProductDetailPage({
                   </div>
                 ) : (
                   <video
-                    src={product.demo_video_url}
+                    src={videoInfo.embedUrl}
                     controls
                     className="w-full rounded-lg border border-border"
                   />

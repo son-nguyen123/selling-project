@@ -8,7 +8,7 @@
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES
   ('product-images', 'product-images', true, 52428800,
-   ARRAY['image/jpeg','image/jpg','image/png','image/gif','image/webp','image/svg+xml','image/bmp','image/tiff'])
+   ARRAY['image/jpeg','image/png','image/gif','image/webp','image/svg+xml','image/bmp','image/tiff'])
 ON CONFLICT (id) DO UPDATE SET public = true;
 
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
@@ -47,7 +47,7 @@ BEGIN
   END IF;
 END $$;
 
--- 4. INSERT policy for product-images (allows service role + admin users)
+-- 4. INSERT policy for product-images (admin users only; service-role key bypasses RLS)
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -58,11 +58,14 @@ BEGIN
   ) THEN
     CREATE POLICY "product_images_insert"
       ON storage.objects FOR INSERT
-      WITH CHECK (bucket_id = 'product-images');
+      WITH CHECK (
+        bucket_id = 'product-images'
+        AND auth.jwt()->>'email' ILIKE '%@admin.com'
+      );
   END IF;
 END $$;
 
--- 5. INSERT policy for product-videos
+-- 5. INSERT policy for product-videos (admin users only)
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -73,11 +76,14 @@ BEGIN
   ) THEN
     CREATE POLICY "product_videos_insert"
       ON storage.objects FOR INSERT
-      WITH CHECK (bucket_id = 'product-videos');
+      WITH CHECK (
+        bucket_id = 'product-videos'
+        AND auth.jwt()->>'email' ILIKE '%@admin.com'
+      );
   END IF;
 END $$;
 
--- 6. UPDATE policy (for upsert support)
+-- 6. UPDATE policy (admin users only)
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -88,7 +94,10 @@ BEGIN
   ) THEN
     CREATE POLICY "product_images_update"
       ON storage.objects FOR UPDATE
-      USING (bucket_id = 'product-images');
+      USING (
+        bucket_id = 'product-images'
+        AND auth.jwt()->>'email' ILIKE '%@admin.com'
+      );
   END IF;
 END $$;
 
@@ -102,11 +111,14 @@ BEGIN
   ) THEN
     CREATE POLICY "product_videos_update"
       ON storage.objects FOR UPDATE
-      USING (bucket_id = 'product-videos');
+      USING (
+        bucket_id = 'product-videos'
+        AND auth.jwt()->>'email' ILIKE '%@admin.com'
+      );
   END IF;
 END $$;
 
--- 7. DELETE policies
+-- 7. DELETE policies (admin users only)
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -117,7 +129,10 @@ BEGIN
   ) THEN
     CREATE POLICY "product_images_delete"
       ON storage.objects FOR DELETE
-      USING (bucket_id = 'product-images');
+      USING (
+        bucket_id = 'product-images'
+        AND auth.jwt()->>'email' ILIKE '%@admin.com'
+      );
   END IF;
 END $$;
 
@@ -131,6 +146,9 @@ BEGIN
   ) THEN
     CREATE POLICY "product_videos_delete"
       ON storage.objects FOR DELETE
-      USING (bucket_id = 'product-videos');
+      USING (
+        bucket_id = 'product-videos'
+        AND auth.jwt()->>'email' ILIKE '%@admin.com'
+      );
   END IF;
 END $$;
