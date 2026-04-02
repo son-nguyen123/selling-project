@@ -27,6 +27,7 @@ interface ProductFormData {
   single_image_url: string
   demo_video_url: string
   gallery_urls: string[]
+  demo_urls: string[]
   specs: SpecEntry[]
 }
 
@@ -66,6 +67,7 @@ export default function ProductForm({ initialData, mode }: ProductFormProps) {
   const [singleImageUrl, setSingleImageUrl] = useState(initialData?.single_image_url ?? '')
   const [demoVideoUrl, setDemoVideoUrl] = useState(initialData?.demo_video_url ?? '')
   const [galleryUrls, setGalleryUrls] = useState<string[]>(initialData?.gallery_urls ?? [])
+  const [demoUrls, setDemoUrls] = useState<string[]>(initialData?.demo_urls ?? [])
   const [specs, setSpecs] = useState<SpecEntry[]>(initialData?.specs ?? [])
 
   const dashboardInputRef = useRef<HTMLInputElement>(null)
@@ -135,6 +137,7 @@ export default function ProductForm({ initialData, mode }: ProductFormProps) {
         single_image_url: singleImageUrl || null,
         demo_video_url: demoVideoUrl || null,
         gallery_urls: galleryUrls.length > 0 ? galleryUrls : null,
+        demo_urls: demoUrls.length > 0 ? demoUrls : null,
         specs: Object.keys(specsObj).length > 0 ? specsObj : null,
       }
 
@@ -396,6 +399,43 @@ export default function ProductForm({ initialData, mode }: ProductFormProps) {
                   className="absolute right-1 top-1 hidden rounded-full bg-destructive p-0.5 group-hover:block"
                 >
                   <Trash2 className="h-3 w-3 text-destructive-foreground" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Demo / Live Preview URLs */}
+      <div>
+        <Label>Demo / Live Preview URLs</Label>
+        <div className="mt-2 flex gap-2">
+          <Input
+            placeholder="Dán URL demo/live preview rồi nhấn Enter..."
+            className="flex-1 text-sm"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                const val = (e.currentTarget as HTMLInputElement).value.trim()
+                if (val) {
+                  setDemoUrls((prev) => [...prev, val])
+                  ;(e.currentTarget as HTMLInputElement).value = ''
+                }
+              }
+            }}
+          />
+        </div>
+        {demoUrls.length > 0 && (
+          <div className="mt-3 space-y-1.5">
+            {demoUrls.map((url, idx) => (
+              <div key={idx} className="flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-1.5">
+                <span className="flex-1 truncate text-xs text-foreground">{url}</span>
+                <button
+                  type="button"
+                  onClick={() => setDemoUrls((prev) => prev.filter((_, i) => i !== idx))}
+                  className="shrink-0 rounded p-0.5 text-destructive hover:bg-destructive/10"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
             ))}

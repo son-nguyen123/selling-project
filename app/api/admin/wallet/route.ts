@@ -21,7 +21,7 @@ export async function GET() {
 
     const adminSupabase = createAdminClient()
 
-    const [{ data: qrRow }, { data: transactions }] = await Promise.all([
+    const [qrResult, txnResult] = await Promise.all([
       adminSupabase.from('admin_settings').select('value').eq('key', 'qr_image').single(),
       adminSupabase
         .from('transactions')
@@ -30,9 +30,23 @@ export async function GET() {
         .limit(50),
     ])
 
+    if (qrResult.error?.message?.includes('relation') || qrResult.error?.message?.includes('schema cache')) {
+      return NextResponse.json(
+        { error: 'Bảng admin_settings chưa được tạo. Vui lòng chạy migration 006_ensure_complete_schema.sql trong Supabase SQL editor.' },
+        { status: 500 },
+      )
+    }
+
+    if (txnResult.error?.message?.includes('relation') || txnResult.error?.message?.includes('schema cache')) {
+      return NextResponse.json(
+        { error: 'Bảng transactions chưa được tạo. Vui lòng chạy migration 006_ensure_complete_schema.sql trong Supabase SQL editor.' },
+        { status: 500 },
+      )
+    }
+
     return NextResponse.json({
-      qr_image: qrRow?.value ?? null,
-      transactions: transactions ?? [],
+      qr_image: qrResult.data?.value ?? null,
+      transactions: txnResult.data ?? [],
     })
   } catch (err) {
     console.error('GET /api/admin/wallet error:', err)
@@ -63,7 +77,12 @@ export async function POST(request: NextRequest) {
       const { error } = await adminSupabase
         .from('admin_settings')
         .upsert({ key: 'qr_image', value: body.qr_image }, { onConflict: 'key' })
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      if (error) {
+        const msg = error.message?.includes('relation') || error.message?.includes('schema cache')
+          ? 'Bảng admin_settings chưa tồn tại. Vui lòng chạy migration 006_ensure_complete_schema.sql trong Supabase SQL editor.'
+          : error.message
+        return NextResponse.json({ error: msg }, { status: 500 })
+      }
       return NextResponse.json({ success: true })
     }
 
