@@ -301,6 +301,18 @@ export default function HeaderClient({ user, isAdmin = false, initialBalance = 0
   const [balance, setBalance] = useState(initialBalance)
   const router = useRouter()
 
+  useEffect(() => {
+    if (!user || isAdmin) return
+    fetch('/api/wallet')
+      .then((r) => r.json())
+      .then((data) => {
+        if (typeof data.balance === 'number') {
+          setBalance(data.balance)
+        }
+      })
+      .catch((err) => console.error('Failed to fetch wallet balance:', err))
+  }, [user, isAdmin])
+
   async function handleSignOut() {
     const supabase = createClient()
     await supabase.auth.signOut()

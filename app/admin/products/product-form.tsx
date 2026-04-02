@@ -29,6 +29,7 @@ interface ProductFormData {
   gallery_urls: string[]
   demo_urls: string[]
   specs: SpecEntry[]
+  download_link: string
 }
 
 interface ProductFormProps {
@@ -69,6 +70,7 @@ export default function ProductForm({ initialData, mode }: ProductFormProps) {
   const [galleryUrls, setGalleryUrls] = useState<string[]>(initialData?.gallery_urls ?? [])
   const [demoUrls, setDemoUrls] = useState<string[]>(initialData?.demo_urls ?? [])
   const [specs, setSpecs] = useState<SpecEntry[]>(initialData?.specs ?? [])
+  const [downloadLink, setDownloadLink] = useState(initialData?.download_link ?? '')
 
   const dashboardInputRef = useRef<HTMLInputElement>(null)
   const singleInputRef = useRef<HTMLInputElement>(null)
@@ -139,6 +141,7 @@ export default function ProductForm({ initialData, mode }: ProductFormProps) {
         gallery_urls: galleryUrls.length > 0 ? galleryUrls : null,
         demo_urls: demoUrls.length > 0 ? demoUrls : null,
         specs: Object.keys(specsObj).length > 0 ? specsObj : null,
+        download_link: downloadLink || null,
       }
 
       const url = mode === 'edit' ? `/api/store/products/${initialData?.id}` : '/api/store/products'
@@ -441,6 +444,21 @@ export default function ProductForm({ initialData, mode }: ProductFormProps) {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Download Link */}
+      <div>
+        <Label htmlFor="download_link">Link tải xuống (Download Link)</Label>
+        <Input
+          id="download_link"
+          value={downloadLink}
+          onChange={(e) => setDownloadLink(e.target.value)}
+          placeholder="https://drive.google.com/... hoặc link tải file"
+          className="mt-1"
+        />
+        <p className="mt-1 text-xs text-muted-foreground">
+          Link này sẽ được gửi tới email khách hàng sau khi thanh toán thành công.
+        </p>
       </div>
 
       {/* Specs */}
