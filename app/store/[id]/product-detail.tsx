@@ -497,15 +497,6 @@ export function ProductDetail({
           </div>
         )}
 
-        {/* Debug: full product data */}
-        <details className="border-t border-border px-5 py-4">
-          <summary className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground select-none">
-            🔍 Debug: Dữ liệu sản phẩm (raw)
-          </summary>
-          <pre className="mt-3 overflow-x-auto rounded-lg bg-muted p-4 text-xs text-foreground/80 whitespace-pre-wrap break-all">
-            {JSON.stringify(product, null, 2)}
-          </pre>
-        </details>
       </div>
 
       {/* Content + Sidebar */}
