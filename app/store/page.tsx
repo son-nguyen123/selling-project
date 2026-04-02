@@ -22,7 +22,7 @@ export default async function StorePage({
 
   let query = supabase
     .from('store_products')
-    .select('id, name, price, description, category, stock, dashboard_image_url')
+    .select('*')
     .order('created_at', { ascending: false })
 
   if (search) {

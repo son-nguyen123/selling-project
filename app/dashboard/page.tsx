@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { Eye, ShoppingCart, Download } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import WalletSection from './wallet-section'
 
 interface Project {
   id: number
@@ -83,22 +84,35 @@ export default async function DashboardPage() {
     redirect('/login')
   }
 
-  const { data: wishlistRows = [] } = await supabase
-    .from('wishlists')
-    .select('project_id, projects(id, title, category, price, cover_image_url)')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-
-  const profile = await supabase
-    .from('profiles')
-    .select('name, avatar_url')
-    .eq('id', user.id)
-    .single()
+  const [
+    { data: wishlistRows },
+    profileResult,
+    settingsResult,
+    transactionsResult,
+  ] = await Promise.all([
+    supabase
+      .from('wishlists')
+      .select('project_id, projects(id, title, category, price, cover_image_url)')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false }),
+    supabase.from('profiles').select('name, avatar_url, balance').eq('id', user.id).single(),
+    supabase.from('admin_settings').select('value').eq('key', 'qr_image').single(),
+    supabase
+      .from('transactions')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(20),
+  ])
 
   const userName =
-    profile.data?.name ??
+    profileResult.data?.name ??
     (user.user_metadata?.full_name as string | undefined) ??
     user.email
+
+  const balance = profileResult.data?.balance ?? 0
+  const qrImage = settingsResult.data?.value ?? null
+  const transactions = transactionsResult.data ?? []
 
   return (
     <div className="min-h-screen bg-background">
@@ -112,6 +126,13 @@ export default async function DashboardPage() {
             <p className="text-muted-foreground text-sm mt-0.5">Chào mừng trở lại, {userName}</p>
           </div>
         </div>
+
+        {/* Wallet Section (client component) */}
+        <WalletSection
+          initialBalance={balance}
+          initialTransactions={transactions}
+          qrImage={qrImage}
+        />
 
         {/* Wishlist */}
         <section>
@@ -131,8 +152,8 @@ export default async function DashboardPage() {
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
-              {(wishlistRows ?? []).map((row: any) => {
-                const p = row.projects as Project | null
+              {(wishlistRows ?? []).map((row: { projects: Project | null }) => {
+                const p = row.projects
                 if (!p) return null
                 return <ShopeeCard key={p.id} project={p} />
               })}
@@ -145,3 +166,4 @@ export default async function DashboardPage() {
     </div>
   )
 }
+
