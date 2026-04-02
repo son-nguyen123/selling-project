@@ -60,6 +60,17 @@ export default function RegisterPage() {
       setLoading(false)
       if (signUpError.message.includes('already registered') || signUpError.message.includes('already been registered')) {
         setError('Email này đã được đăng ký. Vui lòng đăng nhập.')
+      } else if (
+        signUpError.message.toLowerCase().includes('error sending confirmation email') ||
+        signUpError.message.toLowerCase().includes('sending confirmation')
+      ) {
+        // Account was created but confirmation email failed to send.
+        // Redirect to check-email so the user can request a resend.
+        if (data?.user) {
+          router.push('/check-email')
+          return
+        }
+        setError('Không thể gửi email xác nhận. Vui lòng thử lại sau.')
       } else {
         setError(signUpError.message)
       }
