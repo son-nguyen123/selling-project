@@ -9,13 +9,15 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
-import { ShoppingBag } from 'lucide-react'
+import { ShoppingBag, Wallet } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCart()
   const router = useRouter()
   const [submitting, setSubmitting] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState<'simulated' | 'wallet'>('simulated')
+  const [walletBalance, setWalletBalance] = useState<number | null>(null)
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -32,6 +34,12 @@ export default function CheckoutPage() {
           email: user.email ?? '',
           name: (user.user_metadata?.full_name as string) ?? '',
         }))
+        // Fetch wallet balance
+        const res = await fetch('/api/wallet')
+        if (res.ok) {
+          const data = await res.json()
+          setWalletBalance(data.balance ?? 0)
+        }
       }
     }
     prefillUser()
@@ -65,6 +73,32 @@ export default function CheckoutPage() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
 
+      // Wallet payment: deduct balance first
+      if (paymentMethod === 'wallet') {
+        if (walletBalance === null || walletBalance < totalPrice) {
+          toast.error(
+            `Số dư ví không đủ. Hiện có: ${(walletBalance ?? 0).toLocaleString('vi-VN')}₫ — cần ${totalPrice.toLocaleString('vi-VN')}₫`,
+          )
+          setSubmitting(false)
+          return
+        }
+        const payRes = await fetch('/api/wallet/pay', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: totalPrice,
+            note: `Thanh toán đơn hàng (${items.map((i) => i.name).join(', ')})`,
+          }),
+        })
+        const payData = await payRes.json()
+        if (!payRes.ok) {
+          toast.error(payData.error ?? 'Thanh toán bằng ví thất bại')
+          setSubmitting(false)
+          return
+        }
+        setWalletBalance(payData.balance)
+      }
+
       const orderItems = items.map((item) => ({
         product_id: item.id,
         name: item.name,
@@ -78,7 +112,7 @@ export default function CheckoutPage() {
         customer_email: form.email,
         items: orderItems,
         total_price: totalPrice,
-        payment_method: 'simulated',
+        payment_method: paymentMethod,
         address: form.address,
       }
       if (user) payload.user_id = user.id
@@ -119,7 +153,7 @@ export default function CheckoutPage() {
                     {item.name} × {item.quantity}
                   </span>
                   <span className="font-medium text-foreground">
-                    ${(item.price * item.quantity).toFixed(2)}
+                    {(item.price * item.quantity).toLocaleString('vi-VN')}₫
                   </span>
                 </div>
               ))}
@@ -127,7 +161,7 @@ export default function CheckoutPage() {
             <Separator className="my-4" />
             <div className="flex items-center justify-between font-semibold">
               <span>Total</span>
-              <span className="text-primary text-lg">${totalPrice.toFixed(2)}</span>
+              <span className="text-primary text-lg">{totalPrice.toLocaleString('vi-VN')}₫</span>
             </div>
           </div>
 
@@ -167,20 +201,67 @@ export default function CheckoutPage() {
               />
             </div>
 
-            {/* Payment */}
-            <div className="rounded-lg border border-border bg-muted/30 p-4">
-              <p className="text-sm font-medium text-foreground">Payment Method</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                🔒 Simulated Payment — no real charges will be made.
-              </p>
+            {/* Payment method */}
+            <div className="space-y-2">
+              <Label>Phương thức thanh toán</Label>
+
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('simulated')}
+                className={`flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors ${
+                  paymentMethod === 'simulated'
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border hover:border-muted-foreground'
+                }`}
+              >
+                <ShoppingBag className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium text-foreground">Thanh toán giả lập</p>
+                  <p className="text-xs text-muted-foreground">Không tính phí thực tế (demo)</p>
+                </div>
+              </button>
+
+              {walletBalance !== null && (
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('wallet')}
+                  className={`flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors ${
+                    paymentMethod === 'wallet'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-muted-foreground'
+                  }`}
+                >
+                  <Wallet className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Thanh toán bằng ví</p>
+                    <p className="text-xs text-muted-foreground">
+                      Số dư hiện tại:{' '}
+                      <span className={walletBalance >= totalPrice ? 'text-green-600 dark:text-green-400 font-medium' : 'text-red-500 font-medium'}>
+                        {walletBalance.toLocaleString('vi-VN')}₫
+                      </span>
+                      {walletBalance < totalPrice && (
+                        <span className="ml-1 text-red-500">(không đủ)</span>
+                      )}
+                    </p>
+                  </div>
+                </button>
+              )}
             </div>
 
             <div className="flex gap-3">
               <Button type="button" variant="outline" asChild className="flex-1">
                 <Link href="/cart">Back to Cart</Link>
               </Button>
-              <Button type="submit" className="flex-1" disabled={submitting}>
-                {submitting ? 'Placing Order...' : `Pay $${totalPrice.toFixed(2)}`}
+              <Button
+                type="submit"
+                className="flex-1"
+                disabled={submitting || (paymentMethod === 'wallet' && (walletBalance === null || walletBalance < totalPrice))}
+              >
+                {submitting
+                  ? 'Đang xử lý...'
+                  : paymentMethod === 'wallet'
+                  ? `Thanh toán bằng ví ${totalPrice.toLocaleString('vi-VN')}₫`
+                  : `Đặt hàng ${totalPrice.toLocaleString('vi-VN')}₫`}
               </Button>
             </div>
           </form>

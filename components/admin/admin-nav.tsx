@@ -2,13 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, ShoppingCart, FolderOpen, LogOut } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, FolderOpen, LogOut, Wallet } from 'lucide-react'
 
 const navItems = [
   { href: '/admin', label: 'Tổng quan', icon: LayoutDashboard, exact: true },
   { href: '/admin/projects', label: 'Dự án', icon: FolderOpen, exact: false },
   { href: '/admin/products', label: 'Sản phẩm', icon: Package, exact: false },
   { href: '/admin/orders', label: 'Đơn hàng', icon: ShoppingCart, exact: false },
+  { href: '/admin/wallet', label: 'Ví tiền', icon: Wallet, exact: false },
 ]
 
 export default function AdminNav({ adminEmail }: { adminEmail: string }) {

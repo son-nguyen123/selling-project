@@ -42,10 +42,15 @@ interface StoreProduct {
   category?: string | null
   stock: number
   dashboard_image_url?: string | null
+  /** Primary detail page image (alias used in some DB schemas) */
+  single_image?: string | null
   single_image_url?: string | null
   demo_video_url?: string | null
   gallery_urls?: string[] | null
+  /** Array of demo/live-preview URLs */
+  demo_urls?: string[] | null
   specs?: Record<string, string> | null
+  [key: string]: unknown
 }
 
 interface Review {
@@ -181,10 +186,12 @@ export function ProductDetail({
   const allImages = [
     ...(product.single_image_url
       ? [product.single_image_url]
-      : product.dashboard_image_url
-        ? [product.dashboard_image_url]
-        : []),
-    ...(product.gallery_urls ?? []),
+      : product.single_image
+        ? [product.single_image]
+        : product.dashboard_image_url
+          ? [product.dashboard_image_url]
+          : []),
+    ...(Array.isArray(product.gallery_urls) ? product.gallery_urls : []),
   ]
 
   const [activeMedia, setActiveMedia] = useState<string | '__video__'>(
@@ -465,6 +472,41 @@ export function ProductDetail({
             </table>
           </div>
         )}
+
+        {/* Demo URLs */}
+        {Array.isArray(product.demo_urls) && product.demo_urls.length > 0 && (
+          <div className="border-t border-border px-5 py-4">
+            <h3 className="mb-3 text-sm font-semibold text-foreground flex items-center gap-2">
+              <Play className="h-4 w-4 text-primary" />
+              Link Demo
+            </h3>
+            <ul className="space-y-2">
+              {product.demo_urls.map((url, idx) => (
+                <li key={idx}>
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm text-primary hover:underline underline-offset-4 break-all"
+                  >
+                    <Download className="h-3.5 w-3.5 shrink-0" />
+                    {url}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Debug: full product data */}
+        <details className="border-t border-border px-5 py-4">
+          <summary className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground select-none">
+            🔍 Debug: Dữ liệu sản phẩm (raw)
+          </summary>
+          <pre className="mt-3 overflow-x-auto rounded-lg bg-muted p-4 text-xs text-foreground/80 whitespace-pre-wrap break-all">
+            {JSON.stringify(product, null, 2)}
+          </pre>
+        </details>
       </div>
 
       {/* Content + Sidebar */}
