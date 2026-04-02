@@ -54,13 +54,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Record transaction
-    await adminSupabase.from('transactions').insert({
+    const { error: txnErr } = await adminSupabase.from('transactions').insert({
       user_id: user.id,
       amount: -amount,
       type: 'payment',
       status: 'completed',
       note: body.note ?? 'Thanh toán đơn hàng',
     })
+
+    if (txnErr) {
+      console.error('Failed to record payment transaction:', txnErr)
+      // Balance was already deducted; log the inconsistency but still succeed
+      // so the user is not double-charged on retry
+    }
 
     return NextResponse.json({ balance: newBalance })
   } catch (err) {

@@ -83,8 +83,14 @@ export default function AdminWalletPage() {
   async function handleTopup(e: React.FormEvent) {
     e.preventDefault()
     const amount = Number(topupAmount)
-    if (!topupUserId.trim()) { toast.error('Nhập User ID'); return }
-    if (!amount || amount <= 0) { toast.error('Nhập số tiền hợp lệ'); return }
+    if (!topupUserId.trim()) {
+      toast.error('Nhập User ID')
+      return
+    }
+    if (!amount || amount <= 0) {
+      toast.error('Nhập số tiền hợp lệ')
+      return
+    }
     setToppingUp(true)
     try {
       const res = await fetch('/api/admin/wallet', {

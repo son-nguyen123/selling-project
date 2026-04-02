@@ -10,7 +10,7 @@ ALTER TABLE store_products
 
 -- 2. User wallet balance
 ALTER TABLE profiles
-  ADD COLUMN IF NOT EXISTS balance INTEGER NOT NULL DEFAULT 0;
+  ADD COLUMN IF NOT EXISTS balance INTEGER NOT NULL DEFAULT 0 CHECK (balance >= 0);
 
 -- 3. Admin settings (stores QR image URL, etc.)
 CREATE TABLE IF NOT EXISTS admin_settings (

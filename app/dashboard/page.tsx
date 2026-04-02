@@ -87,7 +87,6 @@ export default async function DashboardPage() {
   const [
     { data: wishlistRows },
     profileResult,
-    walletResult,
     settingsResult,
     transactionsResult,
   ] = await Promise.all([
@@ -97,7 +96,6 @@ export default async function DashboardPage() {
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),
     supabase.from('profiles').select('name, avatar_url, balance').eq('id', user.id).single(),
-    supabase.from('profiles').select('balance').eq('id', user.id).single(),
     supabase.from('admin_settings').select('value').eq('key', 'qr_image').single(),
     supabase
       .from('transactions')
@@ -112,7 +110,7 @@ export default async function DashboardPage() {
     (user.user_metadata?.full_name as string | undefined) ??
     user.email
 
-  const balance = walletResult.data?.balance ?? 0
+  const balance = profileResult.data?.balance ?? 0
   const qrImage = settingsResult.data?.value ?? null
   const transactions = transactionsResult.data ?? []
 

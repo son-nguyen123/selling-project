@@ -50,7 +50,6 @@ interface StoreProduct {
   /** Array of demo/live-preview URLs */
   demo_urls?: string[] | null
   specs?: Record<string, string> | null
-  [key: string]: unknown
 }
 
 interface Review {
