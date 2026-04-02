@@ -12,29 +12,9 @@ ALTER TABLE public.profiles
 ALTER TABLE store_products
   ADD COLUMN IF NOT EXISTS single_image TEXT,
   ADD COLUMN IF NOT EXISTS demo_video_url TEXT,
-  ADD COLUMN IF NOT EXISTS demo_urls JSONB;
-
--- Ensure gallery_urls exists as TEXT[] if not present (original schema uses TEXT[])
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_name = 'store_products' AND column_name = 'gallery_urls'
-  ) THEN
-    ALTER TABLE store_products ADD COLUMN gallery_urls TEXT[];
-  END IF;
-END $$;
-
--- Ensure single_image_url exists (original schema column)
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_name = 'store_products' AND column_name = 'single_image_url'
-  ) THEN
-    ALTER TABLE store_products ADD COLUMN single_image_url TEXT;
-  END IF;
-END $$;
+  ADD COLUMN IF NOT EXISTS demo_urls JSONB,
+  ADD COLUMN IF NOT EXISTS gallery_urls TEXT[],
+  ADD COLUMN IF NOT EXISTS single_image_url TEXT;
 
 -- 3. Admin settings table (stores key-value pairs like QR image URL)
 CREATE TABLE IF NOT EXISTS public.admin_settings (

@@ -34,7 +34,7 @@ export async function GET() {
       return NextResponse.json({
         balance: profile?.balance ?? 0,
         transactions: [],
-        warning: 'Bảng transactions chưa tồn tại. Liên hệ admin để chạy migration.',
+        warning: 'Bảng transactions chưa tồn tại. Vui lòng chạy migration 006_ensure_complete_schema.sql trong Supabase SQL editor.',
       })
     }
 
