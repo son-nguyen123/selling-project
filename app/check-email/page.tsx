@@ -63,11 +63,20 @@ export default async function CheckEmailPage({
                 Sau khi xác nhận email, bạn có thể đăng nhập bình thường.
               </div>
 
-              <Link href="/login">
-                <Button variant="outline" className="w-full">
-                  Quay lại trang đăng nhập
-                </Button>
-              </Link>
+              <div className="border-t border-border pt-6 mt-2">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Không nhận được email? Nhập lại địa chỉ email để gửi lại liên kết xác nhận.
+                </p>
+                <ResendForm />
+              </div>
+
+              <div className="mt-4">
+                <Link href="/login">
+                  <Button variant="outline" className="w-full">
+                    Quay lại trang đăng nhập
+                  </Button>
+                </Link>
+              </div>
             </>
           )}
         </div>

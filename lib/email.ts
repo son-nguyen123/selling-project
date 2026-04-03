@@ -58,8 +58,9 @@ export async function sendOrderConfirmationEmail(options: SendOrderEmailOptions)
       : ''
 
   try {
+    const fromAddress = process.env.RESEND_FROM_EMAIL ?? 'onboarding@resend.dev'
     const response = await resend.emails.send({
-      from: 'Project Selling <onboarding@resend.dev>',
+      from: `Project Selling <${fromAddress}>`,
       to,
       subject: `Xác nhận đơn hàng #${orderId.slice(0, 8).toUpperCase()} – Project Selling`,
       html: `<!DOCTYPE html>
