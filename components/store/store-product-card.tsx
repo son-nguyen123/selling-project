@@ -128,7 +128,7 @@ export default function StoreProductCard({ product }: StoreProductCardProps) {
                 : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
             }`}
           >
-            {product.stock > 0 ? `Còn ${product.stock}` : 'Hết'}
+            {product.stock > 0 ? `Còn ${product.stock}` : 'Hết hàng'}
           </span>
         </div>
 
