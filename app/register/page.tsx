@@ -42,7 +42,10 @@ export default function RegisterPage() {
     setLoading(true)
     const supabase = createClient()
 
-    const origin = process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin
+    const origin =
+      process.env.NEXT_PUBLIC_SITE_URL ??
+      process.env.NEXT_PUBLIC_APP_URL ??
+      window.location.origin
 
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
@@ -58,21 +61,30 @@ export default function RegisterPage() {
 
     if (signUpError) {
       setLoading(false)
-      if (signUpError.message.includes('already registered') || signUpError.message.includes('already been registered')) {
+      const msg = signUpError.message ?? ''
+      const msgLower = msg.toLowerCase()
+      if (msgLower.includes('already registered') || msgLower.includes('already been registered')) {
         setError('Email này đã được đăng ký. Vui lòng đăng nhập.')
       } else if (
-        signUpError.message.toLowerCase().includes('error sending confirmation email') ||
-        signUpError.message.toLowerCase().includes('sending confirmation')
+        msgLower.includes('error sending confirmation email') ||
+        msgLower.includes('sending confirmation') ||
+        msgLower.includes('smtp') ||
+        msgLower.includes('mailer')
       ) {
-        // Account was created but confirmation email failed to send.
-        // Redirect to check-email so the user can request a resend.
-        if (data?.user) {
-          router.push('/check-email')
-          return
-        }
-        setError('Không thể gửi email xác nhận. Vui lòng thử lại sau.')
+        // Account may have been created but email send failed.
+        // Always redirect to check-email so the user can request a resend.
+        router.push('/check-email')
+        return
+      } else if (msgLower.includes('rate limit') || msgLower.includes('over_email_send_rate_limit') || msgLower.includes('too many')) {
+        setError('Quá nhiều yêu cầu. Vui lòng đợi vài phút rồi thử lại.')
+      } else if (msgLower.includes('invalid') && msgLower.includes('redirect')) {
+        setError('Cấu hình xác thực bị lỗi. Vui lòng liên hệ quản trị viên.')
+      } else if (msgLower.includes('invalid email') || msgLower.includes('unable to validate email')) {
+        setError('Địa chỉ email không hợp lệ.')
+      } else if (msgLower.includes('password') && (msgLower.includes('weak') || msgLower.includes('short'))) {
+        setError('Mật khẩu không đủ mạnh. Vui lòng dùng ít nhất 8 ký tự, bao gồm chữ hoa và số.')
       } else {
-        setError(signUpError.message)
+        setError(typeof msg === 'string' && msg ? msg : 'Đăng ký thất bại. Vui lòng thử lại sau.')
       }
       return
     }
@@ -92,9 +104,13 @@ export default function RegisterPage() {
 
   async function handleGoogleSignIn() {
     const supabase = createClient()
+    const origin =
+      process.env.NEXT_PUBLIC_SITE_URL ??
+      process.env.NEXT_PUBLIC_APP_URL ??
+      window.location.origin
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: `${origin}/auth/callback` },
     })
   }
 

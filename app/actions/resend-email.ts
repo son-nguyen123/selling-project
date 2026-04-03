@@ -14,7 +14,10 @@ export async function resendConfirmationEmail(email: string): Promise<{ error?: 
   const headersList = await headers()
   const host = headersList.get('host') ?? 'localhost:3000'
   const proto = headersList.get('x-forwarded-proto') ?? 'http'
-  const origin = process.env.NEXT_PUBLIC_APP_URL ?? `${proto}://${host}`
+  const origin =
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    process.env.NEXT_PUBLIC_APP_URL ??
+    `${proto}://${host}`
 
   const { error } = await supabase.auth.resend({
     type: 'signup',
