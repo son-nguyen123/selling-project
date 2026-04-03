@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS public.orders (
 
 -- 2. Add any missing columns to an existing orders table
 ALTER TABLE public.orders
+  ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id),
   ADD COLUMN IF NOT EXISTS customer_email TEXT,
   ADD COLUMN IF NOT EXISTS customer_name TEXT,
   ADD COLUMN IF NOT EXISTS items JSONB,
