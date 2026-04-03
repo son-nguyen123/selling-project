@@ -142,13 +142,12 @@ export async function sendOrderConfirmationEmail(options: SendOrderEmailOptions)
     const info = await transporter.sendMail({
       from: `"Project Selling" <${process.env.GMAIL_USER}>`,
       to,
-      subject: 'Tải sản phẩm của bạn',
+      subject: `Tải sản phẩm của bạn – Đơn hàng #${orderId.slice(0, 8).toUpperCase()}`,
       html,
     })
     console.log('[email] Order confirmation sent successfully:', info.messageId)
   } catch (error) {
     // Log but do NOT rethrow – a failed email must never block an order
     console.error('[email] Failed to send order confirmation email:', error)
-    throw error  // re-throw so the caller can decide to log/ignore
   }
 }
