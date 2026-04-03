@@ -13,7 +13,7 @@ import { ShoppingBag, Wallet } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
 export default function CheckoutPage() {
-  const { items, totalPrice, clearCart } = useCart()
+  const { items, totalPrice, clearCart, hydrated } = useCart()
   const router = useRouter()
   const [submitting, setSubmitting] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState<'simulated' | 'wallet'>('simulated')
@@ -44,6 +44,16 @@ export default function CheckoutPage() {
     }
     prefillUser()
   }, [])
+
+  if (!hydrated) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6">
+          <div className="mx-auto h-16 w-16 rounded-full bg-muted animate-pulse mb-4" />
+        </div>
+      </div>
+    )
+  }
 
   if (items.length === 0) {
     return (
@@ -124,8 +134,14 @@ export default function CheckoutPage() {
       })
 
       if (!res.ok) {
-        const err = await res.json()
-        throw new Error(err.error ?? 'Failed to place order')
+        let errorMsg = 'Failed to place order'
+        try {
+          const err = await res.json()
+          errorMsg = typeof err.error === 'string' ? err.error : errorMsg
+        } catch {
+          // Response body was not JSON (e.g. HTML error page) – use generic message
+        }
+        throw new Error(errorMsg)
       }
 
       clearCart()

@@ -71,8 +71,18 @@ export default function RegisterPage() {
           return
         }
         setError('Không thể gửi email xác nhận. Vui lòng thử lại sau.')
+      } else if (
+        signUpError.status === 500 ||
+        signUpError.message.toLowerCase().includes('internal server error') ||
+        signUpError.message.toLowerCase().includes('unexpected error')
+      ) {
+        setError('Máy chủ đang gặp sự cố. Vui lòng thử lại sau ít phút.')
       } else {
-        setError(signUpError.message)
+        setError(
+          typeof signUpError.message === 'string' && signUpError.message.length > 0
+            ? signUpError.message
+            : 'Đã xảy ra lỗi. Vui lòng thử lại.',
+        )
       }
       return
     }
