@@ -60,7 +60,10 @@ export async function POST(request: NextRequest) {
       orderPayload.user_id = user.id
     }
 
-    const { data, error } = await supabase
+    // Use admin client for insert so that orders can be created for both
+    // authenticated and guest users without being blocked by RLS policies.
+    const adminSupabaseInsert = createAdminClient()
+    const { data, error } = await adminSupabaseInsert
       .from('orders')
       .insert(orderPayload)
       .select()
@@ -72,7 +75,7 @@ export async function POST(request: NextRequest) {
     try {
     // Fetch product download links using admin client to access all products
     // regardless of RLS policies, since this runs server-side for a confirmed order.
-      const adminSupabase = createAdminClient()
+      const adminSupabase = adminSupabaseInsert
       const productIds = body.items
         .map((i: { product_id?: string }) => i.product_id)
         .filter(Boolean) as string[]
