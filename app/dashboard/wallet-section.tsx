@@ -75,10 +75,18 @@ function TopupModal({
       fd.append('file', proofFile)
       const uploadRes = await fetch('/api/wallet/upload', { method: 'POST', body: fd })
       if (!uploadRes.ok) {
-        const err = await uploadRes.json()
-        throw new Error(err.error ?? 'Lỗi upload ảnh')
+        let errMsg = 'Lỗi upload ảnh'
+        try {
+          const err = await uploadRes.json() as { error?: string }
+          if (err.error) errMsg = err.error
+        } catch {
+          // Response was not JSON (e.g. HTML error page) – keep generic message
+        }
+        throw new Error(errMsg)
       }
-      const { url: proofImageUrl } = await uploadRes.json()
+      const uploadData = await uploadRes.json() as { url?: string }
+      if (!uploadData.url) throw new Error('Upload thành công nhưng không nhận được URL ảnh')
+      const proofImageUrl = uploadData.url
 
       // Create pending deposit
       const res = await fetch('/api/wallet', {
@@ -86,10 +94,16 @@ function TopupModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: amt, note: 'Nạp tiền qua QR', proof_image: proofImageUrl }),
       })
-      const data = await res.json()
+      let data: { balance?: number; transaction?: Transaction; error?: string } = {}
+      try {
+        data = await res.json()
+      } catch {
+        // Response was not JSON (e.g. HTML error page)
+        throw new Error('Lỗi kết nối server, vui lòng thử lại')
+      }
       if (!res.ok) throw new Error(data.error ?? 'Lỗi nạp tiền')
       setStatus('processing')
-      onSuccess(data.balance, data.transaction)
+      onSuccess(data.balance as number, data.transaction as Transaction)
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Lỗi nạp tiền')
       setStatus('idle')

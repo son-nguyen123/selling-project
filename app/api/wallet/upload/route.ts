@@ -30,7 +30,22 @@ export async function POST(request: NextRequest) {
 
     if (uploadError) {
       console.error('Deposit proof upload error:', uploadError)
-      return NextResponse.json({ error: uploadError.message }, { status: 500 })
+      // Supabase Storage SDK may return a JSON-serialised string as the message
+      // (e.g. when the error body lacks a standard "message" field and the SDK
+      // falls back to JSON.stringify).  Try to unwrap it here so the client
+      // receives a human-readable message rather than a raw JSON string.
+      let errorMsg: string = uploadError.message ?? 'Upload failed'
+      try {
+        const parsed = JSON.parse(errorMsg) as Record<string, unknown>
+        const extracted =
+          (parsed.message as string | undefined) ??
+          (parsed.error as string | undefined) ??
+          (parsed.msg as string | undefined)
+        if (extracted) errorMsg = extracted
+      } catch {
+        // errorMsg is already a plain string – nothing to unwrap
+      }
+      return NextResponse.json({ error: errorMsg }, { status: 500 })
     }
 
     const { data: { publicUrl } } = adminSupabase.storage.from('product-images').getPublicUrl(filename)
