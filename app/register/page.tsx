@@ -40,64 +40,32 @@ export default function RegisterPage() {
     }
 
     setLoading(true)
-    const supabase = createClient()
 
-    const origin = process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin
-
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName.trim(),
-          phone: phone.trim(),
-        },
-        emailRedirectTo: `${origin}/auth/callback`,
-      },
+    // Use the server-side register route which auto-confirms the email,
+    // so the user can log in immediately without any verification step.
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, fullName: fullName.trim(), phone: phone.trim() }),
     })
 
-    if (signUpError) {
+    const json = await res.json()
+
+    if (!res.ok) {
       setLoading(false)
-      if (signUpError.message.includes('already registered') || signUpError.message.includes('already been registered')) {
-        setError('Email này đã được đăng ký. Vui lòng đăng nhập.')
-      } else if (
-        signUpError.message.toLowerCase().includes('error sending confirmation email') ||
-        signUpError.message.toLowerCase().includes('sending confirmation')
-      ) {
-        // Account was created but confirmation email failed to send.
-        // Redirect to check-email so the user can request a resend.
-        if (data?.user) {
-          router.push('/check-email')
-          return
-        }
-        setError('Không thể gửi email xác nhận. Vui lòng thử lại sau.')
-      } else if (
-        signUpError.status === 500 ||
-        signUpError.message.toLowerCase().includes('internal server error') ||
-        signUpError.message.toLowerCase().includes('unexpected error')
-      ) {
-        setError('Máy chủ đang gặp sự cố. Vui lòng thử lại sau ít phút.')
-      } else {
-        setError(
-          typeof signUpError.message === 'string' && signUpError.message.length > 0
-            ? signUpError.message
-            : 'Đã xảy ra lỗi. Vui lòng thử lại.',
-        )
-      }
+      setError(json.error ?? 'Đã xảy ra lỗi. Vui lòng thử lại.')
       return
     }
 
-    // Insert profile record right away (works even before email confirmation)
-    if (data.user) {
-      await supabase.from('profiles').upsert({
-        id: data.user.id,
-        name: fullName.trim(),
-        avatar_url: null,
-      })
-    }
-
     setLoading(false)
-    router.push('/check-email')
+
+    if (json.autoLogin) {
+      // Session cookie was set server-side; send user to their dashboard
+      router.push('/dashboard')
+    } else {
+      // Account created but auto-login failed – redirect to login page
+      router.push('/login')
+    }
   }
 
   async function handleGoogleSignIn() {

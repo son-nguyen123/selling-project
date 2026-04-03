@@ -1,6 +1,27 @@
-import { Resend } from 'resend'
+import nodemailer from 'nodemailer'
 
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
+// ---------------------------------------------------------------------------
+// Gmail SMTP transporter
+// Requires the following environment variables:
+//   GMAIL_USER   – your Gmail address (e.g. you@gmail.com)
+//   GMAIL_PASS   – a Gmail App Password (NOT your normal password)
+//                  https://myaccount.google.com/apppasswords
+// ---------------------------------------------------------------------------
+function createTransporter() {
+  const user = process.env.GMAIL_USER
+  const pass = process.env.GMAIL_PASS
+
+  if (!user || !pass) {
+    return null
+  }
+
+  return nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,         // SSL
+    secure: true,      // use TLS
+    auth: { user, pass },
+  })
+}
 
 interface OrderItem {
   name: string
@@ -17,16 +38,16 @@ interface SendOrderEmailOptions {
   totalPrice: number
 }
 
-export async function sendOrderConfirmationEmail(options: SendOrderEmailOptions): Promise<void> {
-  if (!resend) {
-    console.warn('RESEND_API_KEY not configured – skipping order confirmation email')
-    return
-  }
-
-  const { to, customerName, orderId, items, totalPrice } = options
-
-  const downloadLinks = items.filter((i) => i.download_link)
-
+// ---------------------------------------------------------------------------
+// Build the HTML body for an order-confirmation email
+// ---------------------------------------------------------------------------
+function buildOrderEmailHtml(
+  customerName: string,
+  orderId: string,
+  items: OrderItem[],
+  totalPrice: number,
+): string {
+  // Rows for each purchased product
   const itemsHtml = items
     .map(
       (item) =>
@@ -38,6 +59,8 @@ export async function sendOrderConfirmationEmail(options: SendOrderEmailOptions)
     )
     .join('')
 
+  // Download links section (only shown when at least one item has a link)
+  const downloadLinks = items.filter((i) => i.download_link)
   const downloadSection =
     downloadLinks.length > 0
       ? `<div style="margin-top:24px;padding:16px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;">
@@ -57,12 +80,7 @@ export async function sendOrderConfirmationEmail(options: SendOrderEmailOptions)
         </div>`
       : ''
 
-  try {
-    const response = await resend.emails.send({
-      from: 'Project Selling <onboarding@resend.dev>',
-      to,
-      subject: `Xác nhận đơn hàng #${orderId.slice(0, 8).toUpperCase()} – Project Selling`,
-      html: `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="vi">
 <head><meta charset="UTF-8"/></head>
 <body style="font-family:sans-serif;background:#f9fafb;margin:0;padding:0;">
@@ -72,7 +90,7 @@ export async function sendOrderConfirmationEmail(options: SendOrderEmailOptions)
       <p style="margin:4px 0 0;color:#fecaca;font-size:14px;">Đặt hàng thành công!</p>
     </div>
     <div style="padding:32px;">
-      <p style="color:#374151;">Xin chào <strong>${customerName || to}</strong>,</p>
+      <p style="color:#374151;">Xin chào <strong>${customerName}</strong>,</p>
       <p style="color:#374151;">Đơn hàng <strong>#${orderId.slice(0, 8).toUpperCase()}</strong> của bạn đã được xác nhận.</p>
 
       <table style="width:100%;border-collapse:collapse;margin-top:16px;">
@@ -101,10 +119,36 @@ export async function sendOrderConfirmationEmail(options: SendOrderEmailOptions)
     </div>
   </div>
 </body>
-</html>`,
+</html>`
+}
+
+// ---------------------------------------------------------------------------
+// Public API – send an order-confirmation email with download links
+// ---------------------------------------------------------------------------
+export async function sendOrderConfirmationEmail(options: SendOrderEmailOptions): Promise<void> {
+  const transporter = createTransporter()
+
+  if (!transporter) {
+    // GMAIL_USER / GMAIL_PASS not configured – skip silently in dev/test
+    console.warn('[email] GMAIL_USER or GMAIL_PASS not configured – skipping order confirmation email')
+    return
+  }
+
+  const { to, customerName, orderId, items, totalPrice } = options
+
+  const html = buildOrderEmailHtml(customerName || to, orderId, items, totalPrice)
+
+  try {
+    const info = await transporter.sendMail({
+      from: `"Project Selling" <${process.env.GMAIL_USER}>`,
+      to,
+      subject: 'Tải sản phẩm của bạn',
+      html,
     })
-    console.log('[email] Order confirmation sent successfully:', response)
+    console.log('[email] Order confirmation sent successfully:', info.messageId)
   } catch (error) {
+    // Log but do NOT rethrow – a failed email must never block an order
     console.error('[email] Failed to send order confirmation email:', error)
+    throw error  // re-throw so the caller can decide to log/ignore
   }
 }
