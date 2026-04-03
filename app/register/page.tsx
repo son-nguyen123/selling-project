@@ -59,13 +59,22 @@ export default function RegisterPage() {
 
       if (signUpError) {
         console.error('[Signup] Supabase signUp error:', signUpError)
-        const msg = typeof signUpError.message === 'string' ? signUpError.message : ''
-        if (msg.includes('already registered') || msg.includes('already been registered')) {
+        const msg = signUpError.message
+        const msgLower = msg.toLowerCase()
+        const isEmailAlreadyRegistered =
+          msg.includes('already registered') || msg.includes('already been registered')
+        const isEmailSendFailure =
+          msgLower.includes('error sending confirmation email') ||
+          msgLower.includes('sending confirmation')
+        const isServerError =
+          signUpError.status === 500 ||
+          msg === '' ||
+          msgLower.includes('unexpected') ||
+          msgLower.includes('internal')
+
+        if (isEmailAlreadyRegistered) {
           setError('Email này đã được đăng ký. Vui lòng đăng nhập.')
-        } else if (
-          msg.toLowerCase().includes('error sending confirmation email') ||
-          msg.toLowerCase().includes('sending confirmation')
-        ) {
+        } else if (isEmailSendFailure) {
           // Account was created but confirmation email failed to send.
           // Redirect to check-email so the user can request a resend.
           if (data?.user) {
@@ -73,7 +82,7 @@ export default function RegisterPage() {
             return
           }
           setError('Không thể gửi email xác nhận. Vui lòng thử lại sau.')
-        } else if (signUpError.status === 500 || msg === '' || msg.toLowerCase().includes('unexpected') || msg.toLowerCase().includes('internal')) {
+        } else if (isServerError) {
           // Supabase server error (500) – often caused by SMTP misconfiguration.
           // Show a friendly message instead of raw/empty/HTML content.
           setError('Máy chủ xác thực gặp sự cố. Vui lòng thử lại sau hoặc liên hệ hỗ trợ.')

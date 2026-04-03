@@ -47,7 +47,7 @@ export function getPublicUrl(bucket: string, path: string): string {
 export async function triggerBrowserDownload(url: string, filename: string): Promise<void> {
   const res = await fetch(url)
   if (!res.ok) {
-    throw new Error(`Download failed: ${res.status} ${res.statusText}`)
+    throw new Error(`Không thể tải file. Vui lòng kiểm tra kết nối mạng và thử lại, hoặc liên hệ hỗ trợ nếu lỗi tiếp tục xảy ra. (${res.status})`)
   }
   const blob = await res.blob()
   const objectUrl = URL.createObjectURL(blob)

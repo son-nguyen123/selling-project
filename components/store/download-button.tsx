@@ -30,6 +30,10 @@ interface DownloadButtonProps {
  * A reusable "Download" button that supports Supabase Storage signed URLs
  * and direct external URLs.
  *
+ * **Source priority**: if both `bucket`+`storagePath` and `directUrl` are provided,
+ * the Supabase Storage path takes precedence and `directUrl` is ignored.
+ * Provide only one source to avoid ambiguity.
+ *
  * Usage (Supabase Storage):
  * ```tsx
  * <DownloadButton bucket="products" storagePath="project-123/source.zip" filename="source.zip" />
