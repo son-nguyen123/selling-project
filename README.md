@@ -172,6 +172,44 @@ Script sẽ tạo tài khoản với thông tin:
 
 Sau khi chạy script, đăng nhập tại `/login` với thông tin trên để truy cập `/admin`.
 
+## Supabase Auth URL Configuration
+
+After deploying, you **must** configure the authentication URLs in the Supabase Dashboard or signup / OAuth will fail with a 500 error.
+
+### Steps
+
+1. Open [Supabase Dashboard](https://supabase.com/dashboard) → your project → **Authentication** → **URL Configuration**.
+
+2. Set **Site URL** to your production domain:
+   ```
+   https://your-app.vercel.app
+   ```
+
+3. Add the following **Redirect URLs** (one per line):
+   ```
+   https://your-app.vercel.app/auth/callback
+   http://localhost:3000/auth/callback
+   ```
+   - The production URL is required so Vercel deployments can complete the OAuth / email-confirmation flow.
+   - The `localhost` URL is for local development.
+   - If you use Vercel preview deployments, add a wildcard such as `https://*.vercel.app/auth/callback`.
+
+4. **SMTP / Email provider** — Supabase projects come with a built-in rate-limited email service for testing. For production you must configure a custom SMTP provider (e.g. Resend, SendGrid):
+   - Go to **Authentication** → **SMTP Settings** and toggle **Enable Custom SMTP**.
+   - Fill in the SMTP host, port, username, and password from your email provider.
+   - Without this, the confirmation email will fail and the signup endpoint returns **500**.
+
+5. If you temporarily want to test signup without email confirmation, go to **Authentication** → **Providers** → **Email** and toggle off **"Confirm email"**. Remember to re-enable it in production.
+
+### Common Error: `signup` returning 500
+
+| Root cause | Fix |
+|---|---|
+| `Site URL` is still `http://localhost:3000` in production | Update to your production domain (step 2 above) |
+| Redirect URL not in the allow-list | Add `/auth/callback` to Redirect URLs (step 3 above) |
+| SMTP not configured / rate-limited | Configure a custom SMTP provider (step 4 above) |
+| `NEXT_PUBLIC_APP_URL` env var missing | Set `NEXT_PUBLIC_APP_URL=https://your-app.vercel.app` in Vercel → Settings → Environment Variables |
+
 ## Environment Variables
 
 Create a `.env.local` file (for local development) with:
@@ -180,6 +218,10 @@ Create a `.env.local` file (for local development) with:
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+# Optional: override the base URL used in auth redirect links
+# Defaults to window.location.origin on the client
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
 These are automatically configured if you use the Vercel integration.

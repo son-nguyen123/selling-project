@@ -40,54 +40,74 @@ export default function RegisterPage() {
     }
 
     setLoading(true)
-    const supabase = createClient()
+    try {
+      const supabase = createClient()
 
-    const origin = process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin
+      const origin = process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin
 
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName.trim(),
-          phone: phone.trim(),
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName.trim(),
+            phone: phone.trim(),
+          },
+          emailRedirectTo: `${origin}/auth/callback`,
         },
-        emailRedirectTo: `${origin}/auth/callback`,
-      },
-    })
-
-    if (signUpError) {
-      setLoading(false)
-      if (signUpError.message.includes('already registered') || signUpError.message.includes('already been registered')) {
-        setError('Email này đã được đăng ký. Vui lòng đăng nhập.')
-      } else if (
-        signUpError.message.toLowerCase().includes('error sending confirmation email') ||
-        signUpError.message.toLowerCase().includes('sending confirmation')
-      ) {
-        // Account was created but confirmation email failed to send.
-        // Redirect to check-email so the user can request a resend.
-        if (data?.user) {
-          router.push('/check-email')
-          return
-        }
-        setError('Không thể gửi email xác nhận. Vui lòng thử lại sau.')
-      } else {
-        setError(signUpError.message)
-      }
-      return
-    }
-
-    // Insert profile record right away (works even before email confirmation)
-    if (data.user) {
-      await supabase.from('profiles').upsert({
-        id: data.user.id,
-        name: fullName.trim(),
-        avatar_url: null,
       })
-    }
 
-    setLoading(false)
-    router.push('/check-email')
+      if (signUpError) {
+        console.error('[Signup] Supabase signUp error:', signUpError)
+        const msg = signUpError.message
+        const msgLower = msg.toLowerCase()
+        const isEmailAlreadyRegistered =
+          msg.includes('already registered') || msg.includes('already been registered')
+        const isEmailSendFailure =
+          msgLower.includes('error sending confirmation email') ||
+          msgLower.includes('sending confirmation')
+        const isServerError =
+          signUpError.status === 500 ||
+          msg === '' ||
+          msgLower.includes('unexpected') ||
+          msgLower.includes('internal')
+
+        if (isEmailAlreadyRegistered) {
+          setError('Email này đã được đăng ký. Vui lòng đăng nhập.')
+        } else if (isEmailSendFailure) {
+          // Account was created but confirmation email failed to send.
+          // Redirect to check-email so the user can request a resend.
+          if (data?.user) {
+            router.push('/check-email')
+            return
+          }
+          setError('Không thể gửi email xác nhận. Vui lòng thử lại sau.')
+        } else if (isServerError) {
+          // Supabase server error (500) – often caused by SMTP misconfiguration.
+          // Show a friendly message instead of raw/empty/HTML content.
+          setError('Máy chủ xác thực gặp sự cố. Vui lòng thử lại sau hoặc liên hệ hỗ trợ.')
+        } else {
+          setError(msg || 'Đăng ký thất bại. Vui lòng thử lại.')
+        }
+        return
+      }
+
+      // Insert profile record right away (works even before email confirmation)
+      if (data?.user) {
+        await supabase.from('profiles').upsert({
+          id: data.user.id,
+          name: fullName.trim(),
+          avatar_url: null,
+        })
+      }
+
+      router.push('/check-email')
+    } catch (err) {
+      console.error('[Signup] Unexpected error:', err)
+      setError('Đã xảy ra lỗi không mong đợi. Vui lòng thử lại sau.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleGoogleSignIn() {
