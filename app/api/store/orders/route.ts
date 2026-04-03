@@ -71,28 +71,28 @@ export async function POST(request: NextRequest) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    // Send order confirmation email with download links
-    try {
     // Fetch product download links using admin client to access all products
     // regardless of RLS policies, since this runs server-side for a confirmed order.
-      const adminSupabase = adminSupabaseInsert
-      const productIds = body.items
-        .map((i: { product_id?: string }) => i.product_id)
-        .filter(Boolean) as string[]
+    const adminSupabase = adminSupabaseInsert
+    const productIds = body.items
+      .map((i: { product_id?: string }) => i.product_id)
+      .filter(Boolean) as string[]
 
-      let downloadLinksMap: Record<string, string | null> = {}
-      if (productIds.length > 0) {
-        const { data: products } = await adminSupabase
-          .from('store_products')
-          .select('id, download_link')
-          .in('id', productIds)
-        if (products) {
-          downloadLinksMap = Object.fromEntries(
-            products.map((p: { id: string; download_link: string | null }) => [p.id, p.download_link]),
-          )
-        }
+    let downloadLinksMap: Record<string, string | null> = {}
+    if (productIds.length > 0) {
+      const { data: products } = await adminSupabase
+        .from('store_products')
+        .select('id, download_link')
+        .in('id', productIds)
+      if (products) {
+        downloadLinksMap = Object.fromEntries(
+          products.map((p: { id: string; download_link: string | null }) => [p.id, p.download_link]),
+        )
       }
+    }
 
+    // Send order confirmation email with download links
+    try {
       const emailItems = body.items.map((item: { product_id?: string; name: string; price: number; quantity: number }) => ({
         name: item.name,
         price: item.price,
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
       // Non-fatal: order is already created, just log the error
     }
 
-    return NextResponse.json(data, { status: 201 })
+    return NextResponse.json({ ...data, download_links: downloadLinksMap }, { status: 201 })
   } catch (err) {
     console.error('POST /api/store/orders error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
