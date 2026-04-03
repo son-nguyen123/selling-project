@@ -59,7 +59,7 @@ export default function RegisterPage() {
     if (signUpError) {
       setLoading(false)
       if (signUpError.message.includes('already registered') || signUpError.message.includes('already been registered')) {
-        setError('Email này đã được đăng ký. Vui lòng đăng nhập.')
+        setError('Email này đã được đăng ký. Nếu chưa xác nhận email, hãy vào trang kiểm tra email để gửi lại liên kết xác nhận, hoặc đăng nhập nếu tài khoản đã được kích hoạt.')
       } else if (
         signUpError.message.toLowerCase().includes('error sending confirmation email') ||
         signUpError.message.toLowerCase().includes('sending confirmation')
