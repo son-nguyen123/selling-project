@@ -101,26 +101,26 @@ export default function StoreProductCard({ product }: StoreProductCardProps) {
       </Link>
 
       {/* Content */}
-      <div className="flex flex-1 flex-col gap-3 p-4">
+      <div className="flex flex-1 flex-col gap-2.5 p-3">
         {/* Product name */}
         <Link href={`/store/${product.id}`} className="block">
-          <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
+          <h3 className="line-clamp-2 text-xs font-semibold leading-snug text-foreground transition-colors group-hover:text-primary sm:text-sm">
             {product.name}
           </h3>
         </Link>
 
         {/* Price bar */}
-        <div className="flex items-center justify-between rounded-lg bg-primary/5 px-3 py-2">
+        <div className="flex items-center justify-between rounded-lg bg-primary/5 px-2.5 py-1.5">
           <div className="flex flex-col">
-            <span className="text-lg font-extrabold text-primary leading-tight">
+            <span className="text-base font-extrabold text-primary leading-tight sm:text-lg">
               {product.price.toLocaleString('vi-VN')}₫
             </span>
-            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+            <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wide">
               Giá bán
             </span>
           </div>
           <span
-            className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+            className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
               product.stock > 5
                 ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
                 : product.stock > 0
@@ -132,25 +132,25 @@ export default function StoreProductCard({ product }: StoreProductCardProps) {
           </span>
         </div>
 
-        {/* Action buttons */}
-        <div className="mt-auto grid grid-cols-2 gap-2 pt-1">
+        {/* Action buttons — stacked vertically so they never overflow on any screen size */}
+        <div className="mt-auto flex flex-col gap-1.5 pt-0.5">
           <Button
             size="sm"
             variant="outline"
-            className="w-full rounded-xl border-primary/30 font-medium hover:border-primary hover:bg-primary/5 hover:text-primary disabled:opacity-50"
+            className="w-full rounded-xl border-primary/30 text-xs font-medium hover:border-primary hover:bg-primary/5 hover:text-primary disabled:opacity-50"
             onClick={handleAddToCart}
             disabled={isOutOfStock}
           >
-            <ShoppingCart className="mr-1.5 h-3.5 w-3.5" />
+            <ShoppingCart className="mr-1 h-3 w-3" />
             Giỏ hàng
           </Button>
           <Button
             size="sm"
-            className="w-full rounded-xl bg-primary font-medium shadow-sm hover:bg-primary/90 hover:shadow-md disabled:opacity-50"
+            className="w-full rounded-xl bg-primary text-xs font-medium shadow-sm hover:bg-primary/90 hover:shadow-md disabled:opacity-50"
             onClick={handleBuyNow}
             disabled={isOutOfStock}
           >
-            <Zap className="mr-1.5 h-3.5 w-3.5" />
+            <Zap className="mr-1 h-3 w-3" />
             Mua ngay
           </Button>
         </div>

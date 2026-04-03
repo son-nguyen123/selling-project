@@ -434,11 +434,11 @@ export function ProductDetail({
               </div>
             )}
 
-            <div className="flex gap-3 pt-1">
+            <div className="flex flex-col gap-2.5 pt-1 sm:flex-row sm:gap-3">
               <Button
                 size="lg"
                 variant="outline"
-                className="flex-1 rounded-xl border-primary/40 py-6 text-sm font-semibold hover:border-primary hover:bg-primary/5 hover:text-primary disabled:opacity-50"
+                className="w-full rounded-xl border-primary/40 py-5 text-sm font-semibold hover:border-primary hover:bg-primary/5 hover:text-primary disabled:opacity-50 sm:flex-1 sm:py-6"
                 onClick={handleAddToCart}
                 disabled={product.stock === 0}
               >
@@ -447,7 +447,7 @@ export function ProductDetail({
               </Button>
               <Button
                 size="lg"
-                className="flex-1 rounded-xl py-6 text-sm font-semibold shadow-md hover:shadow-lg disabled:opacity-50"
+                className="w-full rounded-xl py-5 text-sm font-semibold shadow-md hover:shadow-lg disabled:opacity-50 sm:flex-1 sm:py-6"
                 onClick={handleBuyNow}
                 disabled={product.stock === 0}
               >

@@ -17,7 +17,7 @@ interface TrustBarProps {
 
 export default function TrustBar({ activeCategory }: TrustBarProps) {
   return (
-    <div className="border-b border-border bg-card sticky top-0 z-30 shadow-sm">
+    <div className="border-b border-border bg-card z-30 shadow-sm">
       <div className="max-w-7xl mx-auto px-4">
         <nav className="flex items-center overflow-x-auto scrollbar-hide">
           {NAV_ITEMS.map(({ label, category, icon: Icon }) => {

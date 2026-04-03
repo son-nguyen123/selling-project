@@ -60,12 +60,12 @@ export default function CheckoutPage() {
       <div className="min-h-screen bg-background">
         <div className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6">
           <ShoppingBag className="mx-auto mb-4 h-16 w-16 text-muted-foreground opacity-40" />
-          <h1 className="mb-2 text-2xl font-bold text-foreground">Nothing to checkout</h1>
+          <h1 className="mb-2 text-2xl font-bold text-foreground">Giỏ hàng trống</h1>
           <p className="mb-6 text-sm text-muted-foreground">
-            Your cart is empty.
+            Chưa có sản phẩm nào trong giỏ.
           </p>
           <Button asChild>
-            <Link href="/store">Browse Products</Link>
+            <Link href="/">Mua sắm ngay</Link>
           </Button>
         </div>
       </div>
@@ -172,12 +172,12 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-        <h1 className="mb-8 text-3xl font-bold text-foreground">Checkout</h1>
+        <h1 className="mb-8 text-3xl font-bold text-foreground">Thanh toán</h1>
 
         <div className="grid gap-8 lg:grid-cols-2">
           {/* Order summary */}
           <div className="rounded-lg border border-border bg-card p-6">
-            <h2 className="mb-4 text-lg font-semibold text-foreground">Order Summary</h2>
+            <h2 className="mb-4 text-lg font-semibold text-foreground">Tóm tắt đơn hàng</h2>
             <div className="space-y-3">
               {items.map((item) => (
                 <div key={item.id} className="flex items-center justify-between text-sm">
@@ -192,7 +192,7 @@ export default function CheckoutPage() {
             </div>
             <Separator className="my-4" />
             <div className="flex items-center justify-between font-semibold">
-              <span>Total</span>
+              <span>Tổng cộng</span>
               <span className="text-primary text-lg">{totalPrice.toLocaleString('vi-VN')}₫</span>
             </div>
           </div>
@@ -200,7 +200,7 @@ export default function CheckoutPage() {
           {/* Customer form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="name">Họ và tên</Label>
               <Input
                 id="name"
                 value={form.name}
@@ -217,18 +217,18 @@ export default function CheckoutPage() {
                 required
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="john@example.com"
+                placeholder="ten@email.com"
                 className="mt-1"
               />
             </div>
             <div>
-              <Label htmlFor="address">Shipping Address</Label>
+              <Label htmlFor="address">Địa chỉ</Label>
               <textarea
                 id="address"
                 value={form.address}
                 onChange={(e) => setForm({ ...form, address: e.target.value })}
                 rows={3}
-                placeholder="123 Main St, City, Country"
+                placeholder="123 Đường ABC, Quận 1, TP. HCM"
                 className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
@@ -280,9 +280,9 @@ export default function CheckoutPage() {
               )}
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row">
               <Button type="button" variant="outline" asChild className="flex-1">
-                <Link href="/cart">Back to Cart</Link>
+                <Link href="/cart">Quay lại giỏ hàng</Link>
               </Button>
               <Button
                 type="submit"
