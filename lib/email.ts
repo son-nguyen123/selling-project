@@ -59,6 +59,9 @@ export async function sendOrderConfirmationEmail(options: SendOrderEmailOptions)
 
   try {
     const fromAddress = process.env.RESEND_FROM_EMAIL ?? 'onboarding@resend.dev'
+    if (!process.env.RESEND_FROM_EMAIL) {
+      console.warn('[email] RESEND_FROM_EMAIL not set – falling back to onboarding@resend.dev (only works for Resend test mode)')
+    }
     const response = await resend.emails.send({
       from: `Project Selling <${fromAddress}>`,
       to,
