@@ -144,6 +144,22 @@ export default function CheckoutPage() {
         throw new Error(errorMsg)
       }
 
+      const resData = await res.json()
+
+      // Store download links so the success page can display them
+      const downloadLinks: Array<{ name: string; url: string }> = []
+      if (resData.download_links) {
+        for (const item of items) {
+          const url = resData.download_links[item.id]
+          if (url) downloadLinks.push({ name: item.name, url })
+        }
+      }
+      if (downloadLinks.length > 0) {
+        sessionStorage.setItem('order_download_links', JSON.stringify(downloadLinks))
+      } else {
+        sessionStorage.removeItem('order_download_links')
+      }
+
       clearCart()
       router.push('/checkout/success')
     } catch (err) {
