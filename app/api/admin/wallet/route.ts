@@ -112,15 +112,14 @@ export async function POST(request: NextRequest) {
         .from('profiles')
         .select('balance')
         .eq('id', txn.user_id)
-        .single()
+        .maybeSingle()
 
       if (profileErr) return NextResponse.json({ error: profileErr.message }, { status: 500 })
 
       const newBalance = (profile?.balance ?? 0) + txn.amount
       const { error: updateErr } = await adminSupabase
         .from('profiles')
-        .update({ balance: newBalance })
-        .eq('id', txn.user_id)
+        .upsert({ id: txn.user_id, balance: newBalance }, { onConflict: 'id' })
 
       if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 })
 
@@ -169,7 +168,7 @@ export async function POST(request: NextRequest) {
         .from('profiles')
         .select('balance')
         .eq('id', userId)
-        .single()
+        .maybeSingle()
 
       if (profileErr) return NextResponse.json({ error: profileErr.message }, { status: 500 })
 
@@ -177,8 +176,7 @@ export async function POST(request: NextRequest) {
 
       const { error: updateErr } = await adminSupabase
         .from('profiles')
-        .update({ balance: newBalance })
-        .eq('id', userId)
+        .upsert({ id: userId, balance: newBalance }, { onConflict: 'id' })
 
       if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 })
 
