@@ -180,9 +180,56 @@ Create a `.env.local` file (for local development) with:
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+# Your public site URL – used to build auth redirect links.
+# For local dev: http://localhost:3000
+# For production: your Vercel domain, e.g. https://selling-project-eosin.vercel.app
+NEXT_PUBLIC_APP_URL=https://your-project.vercel.app
 ```
 
 These are automatically configured if you use the Vercel integration.
+
+## Supabase Auth URL Configuration
+
+After deploying to Vercel (or any hosting), you **must** configure the following in your Supabase project to make email confirmation and OAuth redirects work correctly.
+
+### Steps
+
+1. Open **Supabase Dashboard → Authentication → URL Configuration**.
+
+2. Set **Site URL** to your production domain:
+   ```
+   https://your-project.vercel.app
+   ```
+
+3. Under **Redirect URLs**, add **all** allowed redirect destinations:
+   ```
+   https://your-project.vercel.app/auth/callback
+   http://localhost:3000/auth/callback
+   ```
+   > ⚠️ If the redirect URL is missing from this list, Supabase will block the confirmation link and the signup will fail with a 500 error.
+
+4. Click **Save changes**.
+
+### SMTP / Email Confirmation
+
+If **"Confirm email"** is enabled in **Authentication → Email**, Supabase must be able to send emails. There are two options:
+
+| Option | How |
+|--------|-----|
+| **Built-in Supabase SMTP** (free tier) | Works out-of-the-box but has a low send rate. No extra config needed. |
+| **Custom SMTP** | Go to **Authentication → SMTP Settings**, enable "Custom SMTP", and fill in your provider details (e.g. SendGrid, Mailgun, Resend SMTP). |
+
+> 💡 If you are still testing and don't need email confirmation, you can **disable** it temporarily under **Authentication → Email → Confirm email** to rule out SMTP as the cause of a signup 500 error.
+
+### Order Confirmation Emails
+
+This project uses [Resend](https://resend.com) to send order confirmation emails with download links. To enable this feature:
+
+1. Sign up at [resend.com](https://resend.com) and create a free API key.
+2. Add `RESEND_API_KEY=re_...` to your Vercel environment variables.
+3. Verify your sending domain (or use `onboarding@resend.dev` for testing).
+
 
 ## Styling
 

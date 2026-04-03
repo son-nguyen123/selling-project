@@ -8,7 +8,17 @@ import { useCart } from '@/app/context/cart-provider'
 import { Separator } from '@/components/ui/separator'
 
 export default function CartPage() {
-  const { items, removeFromCart, updateQuantity, totalPrice } = useCart()
+  const { items, removeFromCart, updateQuantity, totalPrice, hydrated } = useCart()
+
+  if (!hydrated) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6">
+          <div className="mx-auto h-16 w-16 rounded-full bg-muted animate-pulse mb-4" />
+        </div>
+      </div>
+    )
+  }
 
   if (items.length === 0) {
     return (
